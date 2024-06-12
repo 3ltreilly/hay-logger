@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "hay_logger"
+version = "0.1.0"
+description = "track hay in the barn"
+authors = ["Bernie Reilly <reilly_bernie@mac.com>"]
+readme = "readme.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+Django = "^5.0.6"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
