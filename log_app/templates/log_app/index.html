@@ -1,0 +1,62 @@
+
+{% extends "base.html" %}
+{% block content %}
+<!--index.html-->
+<p>
+    <input
+        value="Add a new item"
+        type="button"
+        onclick="location.href='{% url "log-add" %}'"
+    />
+</p>
+<h3>
+    Hay Types
+</h3>
+<table class="table-auto mx-auto w-full mt-8">
+    <thead class="bg-gray-800 text-white">
+        <tr class="uppercase font-semibold text-sm">
+            <th class="px-4 py-2">Hay Type</th>
+            <th class="px-4 py-2">Total</th>
+        </tr>
+        </thead>
+        <tbody>
+    {% for bail in bail_count %}
+    <tr class="{% cycle 'bg-gray-300' 'bg-white-100' %}">
+        <td class="border px-4 py-2 text-center">{{ bail.name }}</td>
+        <td class="border px-4 py-2 text-center">{{ bail.total }}</td>
+    </tr>
+    </tbody>
+    {% empty %}
+    <h4>You have no logs!</h4>
+    {% endfor %}
+</table>
+
+{% if object_list %}
+<h3>Hay logs</h3>
+{% endif %}
+<table class="table-auto mx-auto w-full mt-8">
+    <thead class="bg-gray-800 text-white">
+        <tr class="uppercase font-semibold text-sm">
+            <th class="px-4 py-2">Date</th>
+            <th class="px-4 py-2">Transaction Type</th>
+            <th class="px-4 py-2">Hay Type</th>
+            <th class="px-4 py-2">Amount</th>
+            <th class="px-4 py-2">Notes</th>
+        </tr>
+        </thead>
+        <tbody>
+    {% for loglist in object_list %}
+    <tr class="{% cycle 'bg-gray-300' 'bg-white-100' %}">
+        <td class="border px-4 py-2 text-center">{{ loglist.date }}</td>
+        <td class="border px-4 py-2 text-center">{{ loglist.direction }}</td>
+        <td class="border px-4 py-2 text-center">{{ loglist.hay_type }}</td>
+        <td class="border px-4 py-2 text-center">{{ loglist.amount }}</td>
+        <td class="border px-4 py-2 text-center">{{ loglist.notes }}</td>
+    </tr>
+    </tbody>
+    {% empty %}
+    <h4>You have no logs!</h4>
+    {% endfor %}
+</table>
+
+{% endblock %}
