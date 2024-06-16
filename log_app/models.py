@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.db import models
+from django.urls import reverse
 
 
 # Create your models here.
@@ -16,15 +17,16 @@ class BailCount(models.Model):
 class Log(models.Model):
     date = models.DateTimeField(default=datetime.now)
     hay_type = models.ForeignKey(
-        "BailCount", on_delete=models.RESTRICT, help_text="What type of cutting?"
+        "BailCount", on_delete=models.RESTRICT, help_text="What type of cutting?", default=False
     )
     direction = models.CharField(
         max_length=12,
         choices=(("WITHDRAW", "Withdraw"), ("DEPOSIT", "Deposit")),
-        blank=True,
+        blank=False,
+        default="WITHDRAW",
         help_text="Is hay coming or going?",
     )
-    amount = models.IntegerField()
+    amount = models.IntegerField(default=20)
     notes = models.CharField(
         max_length=200, help_text="general notes", null=True, blank=True
     )
@@ -32,6 +34,9 @@ class Log(models.Model):
         blank=True,
         null=True
     )
+
+    def get_absolute_url(self):
+        return reverse("log-edit", args=[self.id])
 
     def __str__(self):
         """String for representing the Model object."""
