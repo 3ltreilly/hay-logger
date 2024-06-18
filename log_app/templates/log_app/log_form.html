@@ -3,5 +3,12 @@
 <form method="post">{% csrf_token %}
     {{ form.as_p }}
     <input type="submit" value="Save">
+    {% if object %}
+    <input
+            value="Delete this item"
+            type="button"
+            onclick="location.href=
+            '{% url "item-delete" log.id %}'">
+    {% endif %}
 </form>
 {% endblock %}

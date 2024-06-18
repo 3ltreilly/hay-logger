@@ -9,4 +9,9 @@ urlpatterns = [
     path("add/", views.LogCreate.as_view(), name="log-add"),
     path("log/", views.LogView.as_view(), name="log-view"),
     path("log/<int:pk>/", views.LogEdit.as_view(), name="log-edit"),
+    path(
+        "log/<int:pk>/delete/",
+        views.LogDelete.as_view(),
+        name="item-delete",
+    ),
 ]

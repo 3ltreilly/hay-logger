@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Delete Log</h3>
+
+<p>Are you sure you want to delete the Log <i>{{ object.date }}</i>?</p>
+<table class="table-auto mx-auto w-full mt-8">
+    <thead class="bg-gray-800 text-white">
+        <tr class="uppercase font-semibold text-sm">
+            <th class="px-4 py-2">Date</th>
+            <th class="px-4 py-2">Transaction Type</th>
+            <th class="px-4 py-2">Hay Type</th>
+            <th class="px-4 py-2">Amount</th>
+            <th class="px-4 py-2">Notes</th>
+        </tr>
+        </thead>
+        <tbody>
+    <tr class="{% cycle 'bg-gray-300' 'bg-white-100' %}">
+        <td class="border px-4 py-2 text-center">{{ object.date }}</td>
+        <td class="border px-4 py-2 text-center">{{ object.direction }}</td>
+        <td class="border px-4 py-2 text-center">{{ object.hay_type }}</td>
+        <td class="border px-4 py-2 text-center">{{ object.amount }}</td>
+        <td class="border px-4 py-2 text-center">{{ object.notes }}</td>
+    </tr>
+    </tbody>
+</table>
+
+<form method="POST">
+    {% csrf_token %}
+    <input
+        value="Yes, delete."
+        type="submit">
+</form>
+<input
+    value="Cancel"
+    type="button"
+    onclick="location.href='{% url "index" %}';">
+
+{% endblock %}

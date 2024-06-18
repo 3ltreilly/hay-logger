@@ -1,5 +1,5 @@
-from django.urls import reverse
-from django.views.generic import ListView, CreateView, UpdateView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Log, BailCount
 
 
@@ -71,9 +71,25 @@ class LogEdit(UpdateView):
         # check for changing hay type
         if self.initial['hay_type'] == bail_type:
             bail_type.total += amount - self.initial['amount']
+            bail_type.save(
+                update_fields=[
+                    "total",
+                ]
+            )
         else:
             bail_type.total += amount
             self.initial['hay_type'].total -= self.initial['amount']
+
+            bail_type.save(
+                update_fields=[
+                    "total",
+                ]
+            )
+            self.initial['hay_type'].save(
+                update_fields=[
+                    "total",
+                ]
+            )
 
         # would like to add edit time stamp, this don't work yet
         # notes = f"{notes} edited {datetime.datetime.now()}"
@@ -83,16 +99,6 @@ class LogEdit(UpdateView):
         #     ]
         # )
 
-        bail_type.save(
-            update_fields=[
-                "total",
-            ]
-        )
-        self.initial['hay_type'].save(
-            update_fields=[
-                "total",
-            ]
-        )
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -100,3 +106,24 @@ class LogEdit(UpdateView):
 
 class LogView(ListView):
     model = Log
+
+class LogDelete(DeleteView):
+    model = Log
+    success_url = reverse_lazy("index")
+
+    def form_valid(self, form):
+        amount = self.object.amount
+        direction = self.object.direction
+        bail_type = self.object.hay_type
+        # set number signs to make math easier
+        if direction == "WITHDRAW":
+            amount = -amount
+
+        bail_type.total -= amount
+
+        bail_type.save(
+            update_fields=[
+                "total",
+            ]
+        )
+        return super().form_valid(form)
