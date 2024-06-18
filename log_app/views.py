@@ -62,7 +62,6 @@ class LogEdit(UpdateView):
         amount = form.cleaned_data.get("amount")
         direction = form.cleaned_data.get("direction")
         bail_type = form.cleaned_data.get("hay_type")
-        notes = form.cleaned_data.get("notes")
         # set number signs to make math easier
         if self.initial["direction"] == "WITHDRAW":
             self.initial["amount"] = -self.initial["amount"]
