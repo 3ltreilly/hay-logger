@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.db import models
 from django.urls import reverse
+from django.core.validators import MinValueValidator
 
 
 # Create your models here.
@@ -28,7 +29,7 @@ class Log(models.Model):
         default="WITHDRAW",
         help_text="Is hay coming or going?",
     )
-    amount = models.IntegerField(default=20)
+    amount = models.IntegerField(default=20, validators=[MinValueValidator(1)])
     notes = models.CharField(
         max_length=200, help_text="general notes", null=True, blank=True
     )
