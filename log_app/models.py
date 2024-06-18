@@ -5,19 +5,21 @@ from django.urls import reverse
 
 # Create your models here.
 class BailCount(models.Model):
-    name = models.CharField(
-        max_length=20, help_text="Type of cutting", default="first"
-    )
+    name = models.CharField(max_length=20, help_text="Type of cutting", default="first")
     total = models.IntegerField()
 
     def __str__(self):
         """String for representing the Model object."""
         return str(self.name)
 
+
 class Log(models.Model):
     date = models.DateTimeField(default=datetime.now)
     hay_type = models.ForeignKey(
-        "BailCount", on_delete=models.RESTRICT, help_text="What type of cutting?", default=False
+        "BailCount",
+        on_delete=models.RESTRICT,
+        help_text="What type of cutting?",
+        default=False,
     )
     direction = models.CharField(
         max_length=12,
@@ -30,10 +32,7 @@ class Log(models.Model):
     notes = models.CharField(
         max_length=200, help_text="general notes", null=True, blank=True
     )
-    balance_after_transaction = models.IntegerField(
-        blank=True,
-        null=True
-    )
+    balance_after_transaction = models.IntegerField(blank=True, null=True)
 
     def get_absolute_url(self):
         return reverse("log-edit", args=[self.id])

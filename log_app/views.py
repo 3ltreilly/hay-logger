@@ -40,7 +40,8 @@ class LogCreate(CreateView):
 
     def get_success_url(self):
         return reverse("index")
-    
+
+
 class LogEdit(UpdateView):
     model = Log
     fields = ["date", "hay_type", "direction", "amount", "notes"]
@@ -49,12 +50,12 @@ class LogEdit(UpdateView):
         context = super(LogEdit, self).get_context_data()
         context["amount_init"] = self.object.amount
         return context
-    
+
     def get_initial(self):
         self.initial = super().get_initial()
-        self.initial['hay_type'] = self.object.hay_type
-        self.initial['direction'] = self.object.direction
-        self.initial['amount'] = self.object.amount
+        self.initial["hay_type"] = self.object.hay_type
+        self.initial["direction"] = self.object.direction
+        self.initial["amount"] = self.object.amount
         # return self.initial
 
     def form_valid(self, form):
@@ -63,14 +64,14 @@ class LogEdit(UpdateView):
         bail_type = form.cleaned_data.get("hay_type")
         notes = form.cleaned_data.get("notes")
         # set number signs to make math easier
-        if self.initial['direction'] == "WITHDRAW":
-            self.initial['amount'] = -self.initial['amount']
+        if self.initial["direction"] == "WITHDRAW":
+            self.initial["amount"] = -self.initial["amount"]
         if direction == "WITHDRAW":
             amount = -amount
 
         # check for changing hay type
-        if self.initial['hay_type'] == bail_type:
-            bail_type.total += amount - self.initial['amount']
+        if self.initial["hay_type"] == bail_type:
+            bail_type.total += amount - self.initial["amount"]
             bail_type.save(
                 update_fields=[
                     "total",
@@ -78,14 +79,14 @@ class LogEdit(UpdateView):
             )
         else:
             bail_type.total += amount
-            self.initial['hay_type'].total -= self.initial['amount']
+            self.initial["hay_type"].total -= self.initial["amount"]
 
             bail_type.save(
                 update_fields=[
                     "total",
                 ]
             )
-            self.initial['hay_type'].save(
+            self.initial["hay_type"].save(
                 update_fields=[
                     "total",
                 ]
@@ -104,8 +105,10 @@ class LogEdit(UpdateView):
     def get_success_url(self):
         return reverse("index")
 
+
 class LogView(ListView):
     model = Log
+
 
 class LogDelete(DeleteView):
     model = Log
