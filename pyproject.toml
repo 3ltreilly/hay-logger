@@ -13,6 +13,10 @@ Django = "^5.0.6"
 ruff = "^0.4.8"
 pytest = "^8.2.2"
 
+
+[tool.poetry.group.upload.dependencies]
+pandas = "^2.2.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
