@@ -2,3 +2,5 @@
 **/__pycache__
 log_app/migrations/*.py
 db.sqlite3
+db_data.json
+wip.sh
