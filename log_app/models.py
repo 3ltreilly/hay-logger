@@ -33,7 +33,15 @@ class Log(models.Model):
     notes = models.CharField(
         max_length=200, help_text="general notes", null=True, blank=True
     )
-    balance_after_transaction = models.IntegerField(blank=True, null=True)
+    balance_after_transaction = models.IntegerField(
+        blank=True, null=True, validators=[MinValueValidator(1)]
+    )
+    horse_count = models.IntegerField(
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(1)],
+        help_text="How many horses are living here?",
+    )
 
     def get_absolute_url(self):
         return reverse("log-edit", args=[self.id])
