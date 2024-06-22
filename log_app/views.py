@@ -3,19 +3,26 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Log, BailCount
 import datetime
 from django.db.models import Sum
+import pytz
 
 
 # useful functions
 def burn_rate(hay_type, days):
-
-    # id = get_object_or_404(Pile, pk=pk)
-    start_date = datetime.datetime.now() - datetime.timedelta(days)
-    end_date = datetime.datetime.now()
-    bail_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
+    last_log = (
+        Log.objects.filter(hay_type__exact=hay_type)
+        .filter(direction__exact="WITHDRAW")
+        .latest("date")
+    )
+    start_date = last_log.date - datetime.timedelta(days)
+    end_date = last_log.date
+    bail_type = Log.objects.filter(hay_type__exact=hay_type).filter(
+        direction__exact="WITHDRAW"
+    )
     bail_date = bail_type.filter(date__range=(start_date, end_date))
-    bail_count = bail_date.aggregate(Sum('amount'))["amount__sum"]
+    bail_count = bail_date.aggregate(Sum("amount"))["amount__sum"]
 
-    return round(bail_count / days,2)
+    return round(bail_count / days, 2)
+
 
 class ListListView(ListView):
     model = Log
@@ -28,13 +35,23 @@ class ListListView(ListView):
         # Add in a QuerySet of all the books
         context["bail_count"] = BailCount.objects.all().values()
         for hay_type in context["bail_count"]:
+            # get date of last log for empty date math
+            last_log = (
+                Log.objects.filter(hay_type__exact=hay_type["id"])
+                .filter(direction__exact="WITHDRAW")
+                .latest("date")
+            )
             hay_type["sixty"] = burn_rate(hay_type["id"], 60)
             hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
             hay_type["one_year"] = burn_rate(hay_type["id"], 365)
             hay_type["empty_date"] = (
                 datetime.timedelta(hay_type["total"] / hay_type["one_year"])
-                + datetime.datetime.now()
+                + last_log.date
             ).date()
+            hay_type["throw_down"] = round(
+                (datetime.datetime.now(pytz.utc) - last_log.date).days
+                * hay_type["one_year"]
+            )
         return context
 
 
