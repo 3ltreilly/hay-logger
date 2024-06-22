@@ -17,6 +17,11 @@
         <tr class="uppercase font-semibold text-sm">
             <th class="px-4 py-2">Hay Type</th>
             <th class="px-4 py-2">Total</th>
+            <th class="px-4 py-2">60 day burn rate</th>
+            <th class="px-4 py-2">180 day burn rate</th>
+            <th class="px-4 py-2">1 year burn rate</th>
+            <th class="px-4 py-2">Empty Barn Date</th>
+
         </tr>
         </thead>
         <tbody>
@@ -24,6 +29,10 @@
     <tr class="{% cycle 'bg-gray-300' 'bg-white-100' %}">
         <td class="border px-4 py-2 text-center">{{ bail.name }}</td>
         <td class="border px-4 py-2 text-center">{{ bail.total }}</td>
+        <td class="border px-4 py-2 text-center">{{ bail.sixty }}</td>
+        <td class="border px-4 py-2 text-center">{{ bail.one_eight }}</td>
+        <td class="border px-4 py-2 text-center">{{ bail.one_year }}</td>
+        <td class="border px-4 py-2 text-center">{{ bail.empty_date }}</td>
     </tr>
     </tbody>
     {% empty %}
