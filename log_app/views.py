@@ -36,11 +36,14 @@ class ListListView(ListView):
         context["bail_count"] = BailCount.objects.all().values()
         for hay_type in context["bail_count"]:
             # get date of last log for empty date math
-            last_log = (
-                Log.objects.filter(hay_type__exact=hay_type["id"])
-                .filter(direction__exact="WITHDRAW")
-                .latest("date")
-            )
+            try:
+                last_log = (
+                    Log.objects.filter(hay_type__exact=hay_type["id"])
+                    .filter(direction__exact="WITHDRAW")
+                    .latest("date")
+                )
+            except Log.DoesNotExist:
+                pass
             hay_type["sixty"] = burn_rate(hay_type["id"], 60)
             hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
             hay_type["one_year"] = burn_rate(hay_type["id"], 365)
@@ -56,9 +59,24 @@ class ListListView(ListView):
 
 
 class LogCreate(CreateView):
+    """Make view for entering in a hay log
+
+    Args:
+        CreateView (obj): Django class for data entry
+
+    Returns:
+        form: cleaned form
+    """
+
     # This make a form to enter in data
     model = Log
-    fields = ["date", "hay_type", "direction", "amount", "notes"]
+    fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
+
+    def get_initial(self):
+        # pre-populate the number of horse with the value from the latest log
+        initial_data = super(LogCreate, self).get_initial()
+        initial_data["horse_count"] = Log.objects.latest("date").horse_count
+        return initial_data
 
     def form_valid(self, form):
         amount = form.cleaned_data.get("amount")
@@ -83,7 +101,7 @@ class LogCreate(CreateView):
 
 class LogEdit(UpdateView):
     model = Log
-    fields = ["date", "hay_type", "direction", "amount", "notes"]
+    fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
 
     def get_context_data(self):
         context = super(LogEdit, self).get_context_data()
