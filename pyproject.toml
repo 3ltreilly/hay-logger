@@ -12,10 +12,25 @@ Django = "^5.0.6"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.8"
 pytest = "^8.2.2"
+pre-commit = "^3.7.1"
 
 
 [tool.poetry.group.upload.dependencies]
 pandas = "^2.2.2"
+
+[tool.ruff]
+# Same as Black.
+line-length = 100
+indent-width = 4
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+
 
 [build-system]
 requires = ["poetry-core"]
