@@ -27,6 +27,21 @@
             "django": true,
             "autoStartBrowser": true,
             "program": "${workspaceFolder}/manage.py"
+        },
+        {
+            "name": "Docker: Python - Django",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "python": {
+                "pathMappings": [
+                    {
+                        "localRoot": "${workspaceFolder}",
+                        "remoteRoot": "/app"
+                    }
+                ],
+                "projectType": "django"
+            }
         }
     ]
 }
