@@ -1,5 +1,5 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3-slim
+FROM python:3.12-slim
 
 EXPOSE 8000
 
@@ -7,14 +7,25 @@ EXPOSE 8000
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Turns off buffering for easier container logging
+# tell poetry to now make a virtual env
 ENV PYTHONUNBUFFERED=1
+ENV POETRY_VIRTUALENVS_CREATE=false
 
 # Install pip requirements
-COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
+RUN pip install poetry==1.8.0
 
 WORKDIR /app
-COPY . /app
+
+COPY pyproject.toml poetry.lock ./
+COPY hay_logger ./hay_logger
+COPY log_app ./log_app
+COPY manage.py ./
+COPY readme.md ./
+
+# get the database, for debugging
+COPY db.sqlite3 ./
+
+RUN poetry install --without dev,upload
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
@@ -23,3 +34,7 @@ USER appuser
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "hay_logger.wsgi"]
+# go to this website
+# 127.0.0.1:8000/
+
+# CMD ["python", "manage.py","runserver", "0.0.0.0:8000"]
