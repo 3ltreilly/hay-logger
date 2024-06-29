@@ -23,7 +23,7 @@ COPY manage.py ./
 COPY readme.md ./
 
 # get the database, for debugging
-COPY db.sqlite3 ./
+# COPY db.sqlite3 ./
 
 RUN poetry install --without dev,upload
 
