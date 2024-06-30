@@ -1,9 +1,11 @@
-from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .models import Log, BailCount
 import datetime
-from django.db.models import Sum
+
 import pytz
+from django.db.models import Sum
+from django.urls import reverse, reverse_lazy
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+
+from .models import BailCount, Log
 
 
 # useful functions
@@ -15,9 +17,7 @@ def burn_rate(hay_type, days):
     )
     start_date = last_log.date - datetime.timedelta(days)
     end_date = last_log.date
-    bail_type = Log.objects.filter(hay_type__exact=hay_type).filter(
-        direction__exact="WITHDRAW"
-    )
+    bail_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
     bail_date = bail_type.filter(date__range=(start_date, end_date))
     bail_count = bail_date.aggregate(Sum("amount"))["amount__sum"]
 
@@ -48,12 +48,10 @@ class ListListView(ListView):
             hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
             hay_type["one_year"] = burn_rate(hay_type["id"], 365)
             hay_type["empty_date"] = (
-                datetime.timedelta(hay_type["total"] / hay_type["one_year"])
-                + last_log.date
+                datetime.timedelta(hay_type["total"] / hay_type["one_year"]) + last_log.date
             ).date()
             hay_type["throw_down"] = round(
-                (datetime.datetime.now(pytz.utc) - last_log.date).days
-                * hay_type["one_year"]
+                (datetime.datetime.now(pytz.utc) - last_log.date).days * hay_type["one_year"]
             )
         return context
 
