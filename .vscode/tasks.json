@@ -25,6 +25,15 @@
             "dependsOn": [
                 "docker-build"
             ],
+            "dockerRun": {
+                "volumes": [
+                    {
+                        "localPath": "${workspaceFolder}/db",
+                        "containerPath": "/app/db",
+                        "permissions": "rw"
+                    },
+                ]
+            },
             "python": {
                 "args": [
                     "runserver",
