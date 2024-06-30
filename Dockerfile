@@ -33,7 +33,7 @@ RUN poetry install --without dev,upload
 # USER appuser
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "hay_logger.wsgi"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--log-level debug", "hay_logger.wsgi"]
 # go to this website
 # 127.0.0.1:8000/
 
