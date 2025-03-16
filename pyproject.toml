@@ -12,9 +12,9 @@ pytz = "^2024.1"
 gunicorn = "^22.0.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.4.8"
 pytest = "^8.2.2"
 pre-commit = "^3.7.1"
+ruff = "^0.11.0"
 
 
 [tool.poetry.group.upload.dependencies]
