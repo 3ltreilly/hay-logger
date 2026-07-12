@@ -15,4 +15,5 @@ urlpatterns = [
         views.LogDelete.as_view(),
         name="item-delete",
     ),
+    path("usage/", views.UsageOverTimeView.as_view(), name="usage-over-time"),
 ]

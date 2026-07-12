@@ -1,9 +1,10 @@
 import datetime
+import json
 
 import pytz
 from django.db.models import Sum
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
 from .models import BailCount, Log
 
@@ -53,6 +54,60 @@ class ListListView(ListView):
             hay_type["throw_down"] = round(
                 (datetime.datetime.now(pytz.utc) - last_log.date).days * hay_type["one_year"]
             )
+        return context
+
+
+class UsageOverTimeView(TemplateView):
+    template_name = "log_app/usage_over_time.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        logs = Log.objects.order_by("date").values("date", "hay_type__name", "direction", "amount")
+
+        daily_changes = {}
+        hay_types = []
+        for entry in logs:
+            day = entry["date"].date().isoformat()
+            hay_type_name = entry["hay_type__name"]
+            change = entry["amount"] if entry["direction"] == "DEPOSIT" else -entry["amount"]
+
+            if day not in daily_changes:
+                daily_changes[day] = {}
+            daily_changes[day][hay_type_name] = daily_changes[day].get(hay_type_name, 0) + change
+            if hay_type_name not in hay_types:
+                hay_types.append(hay_type_name)
+
+        labels = sorted(daily_changes.keys())
+        running_totals = {hay_type: 0 for hay_type in hay_types}
+        data_by_type = {hay_type: [] for hay_type in hay_types}
+
+        for day in labels:
+            for hay_type in hay_types:
+                running_totals[hay_type] += daily_changes[day].get(hay_type, 0)
+                data_by_type[hay_type].append(running_totals[hay_type])
+
+        color_palette = [
+            ("rgba(75, 192, 192, 1)", "rgba(75, 192, 192, 0.2)"),
+            ("rgba(255, 99, 132, 1)", "rgba(255, 99, 132, 0.2)"),
+            ("rgba(54, 162, 235, 1)", "rgba(54, 162, 235, 0.2)"),
+        ]
+        datasets = []
+        for index, hay_type in enumerate(hay_types):
+            border_color, background_color = color_palette[index % len(color_palette)]
+            datasets.append(
+                {
+                    "label": hay_type.capitalize(),
+                    "data": data_by_type[hay_type],
+                    "borderColor": border_color,
+                    "backgroundColor": background_color,
+                    "fill": False,
+                    "tension": 0.2,
+                }
+            )
+
+        context["usage_labels"] = json.dumps(labels)
+        context["usage_datasets"] = json.dumps(datasets)
+        context["total_usage"] = sum(running_totals.values())
         return context
 
 
