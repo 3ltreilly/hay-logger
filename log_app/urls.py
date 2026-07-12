@@ -8,6 +8,7 @@ from . import views
 urlpatterns = [
     path("", views.ListListView.as_view(), name="index"),
     path("add/", views.LogCreate.as_view(), name="log-add"),
+    path("download/csv/", views.download_csv, name="download-csv"),
     path("log/", views.LogView.as_view(), name="log-view"),
     path("log/<int:pk>/", views.LogEdit.as_view(), name="log-edit"),
     path(

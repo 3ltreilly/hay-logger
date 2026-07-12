@@ -1,8 +1,10 @@
+import csv
 import datetime
 import json
 
 import pytz
 from django.db.models import Sum
+from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
@@ -239,3 +241,46 @@ class LogDelete(DeleteView):
             ]
         )
         return super().form_valid(form)
+
+
+def download_csv(request):
+    """Return all Log entries as a CSV download (one row per log)."""
+    # Query all logs ordered by date
+    logs = Log.objects.all().order_by("date")
+
+    # Create the HttpResponse with CSV header
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="hay_logs.csv"'
+
+    writer = csv.writer(response)
+
+    # Header row
+    writer.writerow(
+        [
+            "id",
+            "date",
+            "amount",
+            "hay_type",
+            "direction",
+            "horse_count",
+            "balance_after_transaction",
+            "notes",
+        ]
+    )
+
+    # Data rows
+    for log in logs:
+        writer.writerow(
+            [
+                log.id,
+                log.date.isoformat() if log.date else "",
+                log.amount,
+                log.hay_type.name if log.hay_type else "",
+                log.direction,
+                log.horse_count if log.horse_count is not None else "",
+                log.balance_after_transaction if log.balance_after_transaction is not None else "",
+                log.notes if log.notes else "",
+            ]
+        )
+
+    return response
