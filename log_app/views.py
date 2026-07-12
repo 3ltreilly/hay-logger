@@ -212,17 +212,17 @@ def download_csv(request):
     )
 
     # Data rows
-    for l in logs:
+    for log in logs:
         writer.writerow(
             [
-                l.id,
-                l.date.isoformat() if l.date else "",
-                l.amount,
-                l.hay_type.name if l.hay_type else "",
-                l.direction,
-                l.horse_count if l.horse_count is not None else "",
-                l.balance_after_transaction if l.balance_after_transaction is not None else "",
-                l.notes if l.notes else "",
+                log.id,
+                log.date.isoformat() if log.date else "",
+                log.amount,
+                log.hay_type.name if log.hay_type else "",
+                log.direction,
+                log.horse_count if log.horse_count is not None else "",
+                log.balance_after_transaction if log.balance_after_transaction is not None else "",
+                log.notes if log.notes else "",
             ]
         )
 
