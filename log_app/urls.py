@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 # use the 'name' as a way of referencing these paths.  for example
@@ -15,4 +16,5 @@ urlpatterns = [
         views.LogDelete.as_view(),
         name="item-delete",
     ),
+    path("usage/", views.UsageOverTimeView.as_view(), name="usage-over-time"),
 ]

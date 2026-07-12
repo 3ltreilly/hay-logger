@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Hay Inventory Running Total</h2>
+<p>
+    <input value="Back to Dashboard" type="button" onclick="location.href='{% url "index" %}'" />
+</p>
+<p>Current inventory total: <strong>{{ total_usage }}</strong></p>
+<canvas id="usageChart" width="800" height="400"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const labels = {{ usage_labels|safe }};
+  const datasets = {{ usage_datasets|safe }};
+  const ctx = document.getElementById('usageChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: datasets
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+</script>
+{% endblock %}

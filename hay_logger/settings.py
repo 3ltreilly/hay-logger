@@ -25,7 +25,14 @@ SECRET_KEY = "django-insecure-2xk4^^5(g*&-5@ea8fs=z^hp%6-&l08jr2k*5!0z!(1#49b@f6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.7.226", "192.168.7.253", "localhost", "127.0.0.1", "milhouse.local"]
+ALLOWED_HOSTS = [
+    "192.168.7.226",
+    "192.168.7.253",
+    "localhost",
+    "127.0.0.1",
+    "milhouse.local",
+    "192.168.7.134",
+]
 
 
 # Application definition
@@ -38,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "log_app",
+    "django_plotly_dash.apps.DjangoPlotlyDashConfig",
 ]
 
 MIDDLEWARE = [
@@ -122,3 +130,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# stuff I've added
+X_FRAME_OPTIONS = "SAMEORIGIN"

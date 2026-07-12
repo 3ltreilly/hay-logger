@@ -5,10 +5,11 @@ what we have now if you add up all rows
 
 """
 
-import pandas as pd
-from pathlib import Path
 import json
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 from dateutil import parser
 
 file_path = Path("up_load/hay log book.csv")
