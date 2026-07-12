@@ -4,6 +4,8 @@ from .models import Log, BailCount
 import datetime
 from django.db.models import Sum
 import pytz
+from django.http import HttpResponse
+import csv
 
 
 # useful functions
@@ -182,3 +184,46 @@ class LogDelete(DeleteView):
             ]
         )
         return super().form_valid(form)
+
+
+def download_csv(request):
+    """Return all Log entries as a CSV download (one row per log)."""
+    # Query all logs ordered by date
+    logs = Log.objects.all().order_by("date")
+
+    # Create the HttpResponse with CSV header
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="hay_logs.csv"'
+
+    writer = csv.writer(response)
+
+    # Header row
+    writer.writerow(
+        [
+            "id",
+            "date",
+            "amount",
+            "hay_type",
+            "direction",
+            "horse_count",
+            "balance_after_transaction",
+            "notes",
+        ]
+    )
+
+    # Data rows
+    for l in logs:
+        writer.writerow(
+            [
+                l.id,
+                l.date.isoformat() if l.date else "",
+                l.amount,
+                l.hay_type.name if l.hay_type else "",
+                l.direction,
+                l.horse_count if l.horse_count is not None else "",
+                l.balance_after_transaction if l.balance_after_transaction is not None else "",
+                l.notes if l.notes else "",
+            ]
+        )
+
+    return response
