@@ -88,6 +88,14 @@ class UsageOverTimeView(TemplateView):
                 running_totals[hay_type] += daily_changes[day].get(hay_type, 0)
                 data_by_type[hay_type].append(running_totals[hay_type])
 
+        # find offset to get running total to match current bail count
+        cur_bail_count = BailCount.objects.all().values()
+
+        offset = {
+            "first": cur_bail_count[0]["total"] - running_totals[cur_bail_count[0]["name"]],
+            "second": cur_bail_count[1]["total"] - running_totals[cur_bail_count[1]["name"]],
+        }
+
         color_palette = [
             ("rgba(75, 192, 192, 1)", "rgba(75, 192, 192, 0.2)"),
             ("rgba(255, 99, 132, 1)", "rgba(255, 99, 132, 0.2)"),
@@ -96,10 +104,12 @@ class UsageOverTimeView(TemplateView):
         datasets = []
         for index, hay_type in enumerate(hay_types):
             border_color, background_color = color_palette[index % len(color_palette)]
+            # apply offset to running totals
+            plot_data = [num + offset[hay_type] for num in data_by_type[hay_type]]
             datasets.append(
                 {
                     "label": hay_type.capitalize(),
-                    "data": data_by_type[hay_type],
+                    "data": plot_data,
                     "borderColor": border_color,
                     "backgroundColor": background_color,
                     "fill": False,
@@ -109,7 +119,6 @@ class UsageOverTimeView(TemplateView):
 
         context["usage_labels"] = json.dumps(labels)
         context["usage_datasets"] = json.dumps(datasets)
-        context["total_usage"] = sum(running_totals.values())
         return context
 
 
