@@ -4,7 +4,14 @@
 <p>
     <input value="Back to Dashboard" type="button" onclick="location.href='{% url "index" %}'" />
 </p>
-<p>Current inventory total: <strong>{{ total_usage }}</strong></p>
+<form method="get" action="{% url 'usage-over-time' %}">
+    <label for="start_date">Start date</label>
+    <input id="start_date" name="start_date" type="date" value="{{ start_date }}" />
+    <label for="end_date">End date</label>
+    <input id="end_date" name="end_date" type="date" value="{{ end_date }}" />
+    <button type="submit">Apply</button>
+    <a href="{% url 'usage-over-time' %}">Clear</a>
+</form>
 <canvas id="usageChart" width="800" height="400"></canvas>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>

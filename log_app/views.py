@@ -62,9 +62,30 @@ class ListListView(ListView):
 class UsageOverTimeView(TemplateView):
     template_name = "log_app/usage_over_time.html"
 
+    def _parse_date(self, raw_value):
+        if not raw_value:
+            return None
+
+        try:
+            return datetime.datetime.strptime(raw_value, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        logs = Log.objects.order_by("date").values("date", "hay_type__name", "direction", "amount")
+        start_date = self._parse_date(self.request.GET.get("start_date"))
+        end_date = self._parse_date(self.request.GET.get("end_date"))
+
+        context["start_date"] = self.request.GET.get("start_date", "")
+        context["end_date"] = self.request.GET.get("end_date", "")
+
+        logs = Log.objects.order_by("date")
+        if start_date:
+            logs = logs.filter(date__date__gte=start_date)
+        if end_date:
+            logs = logs.filter(date__date__lte=end_date)
+
+        logs = logs.values("date", "hay_type__name", "direction", "amount")
 
         daily_changes = {}
         hay_types = []
@@ -89,11 +110,13 @@ class UsageOverTimeView(TemplateView):
                 data_by_type[hay_type].append(running_totals[hay_type])
 
         # find offset to get running total to match current bail count
-        cur_bail_count = BailCount.objects.all().values()
-
+        bail_counts = {
+            bail_count["name"]: bail_count["total"]
+            for bail_count in BailCount.objects.all().values("name", "total")
+        }
         offset = {
-            "first": cur_bail_count[0]["total"] - running_totals[cur_bail_count[0]["name"]],
-            "second": cur_bail_count[1]["total"] - running_totals[cur_bail_count[1]["name"]],
+            hay_type: bail_counts.get(hay_type, 0) - running_totals.get(hay_type, 0)
+            for hay_type in hay_types
         }
 
         color_palette = [
