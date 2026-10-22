@@ -162,7 +162,10 @@ class LogCreate(CreateView):
     def get_initial(self):
         # pre-populate the number of horse with the value from the latest log
         initial_data = super(LogCreate, self).get_initial()
-        initial_data["horse_count"] = Log.objects.latest("date").horse_count
+        try:
+            initial_data["horse_count"] = Log.objects.latest("date").horse_count
+        except Log.DoesNotExist:
+            pass
         return initial_data
 
     def form_valid(self, form):
