@@ -16,10 +16,15 @@ django-plotly-dash = "^2.3.1"
 pytest = "^8.2.2"
 pre-commit = "^3.7.1"
 ruff = "^0.11.0"
+pytest-django = "^4.14.0"
 
 
 [tool.poetry.group.upload.dependencies]
 pandas = "^2.2.2"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "hay_logger.settings"
+python_files = ["tests.py", "test_*.py"]
 
 [tool.ruff]
 # Same as Black.
