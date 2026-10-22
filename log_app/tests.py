@@ -4,35 +4,35 @@ import json
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import BailCount, Log
+from .models import BaleCount, Log
 
 
 class UsageOverTimeViewTests(TestCase):
     def test_usage_over_time_can_be_filtered_by_date_range(self):
-        first_bail = BailCount.objects.create(name="first", total=100)
-        BailCount.objects.create(name="second", total=200)
+        first_bale = BaleCount.objects.create(name="first", total=100)
+        BaleCount.objects.create(name="second", total=200)
 
         Log.objects.create(
             date=datetime.datetime(2024, 1, 1, 8, 0, 0),
-            hay_type=first_bail,
+            hay_type=first_bale,
             direction="DEPOSIT",
             amount=10,
         )
         Log.objects.create(
             date=datetime.datetime(2024, 1, 15, 8, 0, 0),
-            hay_type=first_bail,
+            hay_type=first_bale,
             direction="WITHDRAW",
             amount=5,
         )
         Log.objects.create(
             date=datetime.datetime(2024, 2, 1, 8, 0, 0),
-            hay_type=first_bail,
+            hay_type=first_bale,
             direction="WITHDRAW",
             amount=3,
         )
         Log.objects.create(
             date=datetime.datetime(2024, 2, 15, 8, 0, 0),
-            hay_type=first_bail,
+            hay_type=first_bale,
             direction="WITHDRAW",
             amount=2,
         )

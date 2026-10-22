@@ -24,11 +24,13 @@ See `wip.sh` for the server commands. The container runs `runserver`; it does no
 - **Migrations:** the production database has `log_app` migrations 0001–0008 applied
   (verified to match the local files). Never delete, rename or regenerate them. When a
   model changes, run `makemigrations` and commit the new file with the model change.
-- **Stored totals:** `BailCount.total` is a running total updated by hand in the
+- **Stored totals:** `BaleCount.total` is a running total updated by hand in the
   `form_valid` methods of `LogCreate`, `LogEdit` and `LogDelete`. Any change to how logs
   are saved must keep it in sync. The usage chart applies an offset because historic totals
   don't match the sum of the logs.
-- **Naming:** "bail" in the code means hay *bale*. `BailCount` is really a hay type.
+- **Naming:** `BaleCount` is really a hay type (first/second cutting). It was renamed
+  from the misspelled `BailCount` in migration 0009, so the old spelling remains only in
+  migrations 0003–0008. Don't edit those files.
 - **`log_app/test_bugs.py`:** the tests marked BUG fail on purpose. The owner is fixing
   them as a learning exercise; don't fix them unless asked. SAFETY NET tests must stay green.
 

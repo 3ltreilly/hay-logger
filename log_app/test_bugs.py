@@ -10,12 +10,12 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import BailCount, Log
+from .models import BaleCount, Log
 
 
 @pytest.fixture
 def first_cutting(db):
-    return BailCount.objects.create(name="first", total=100)
+    return BaleCount.objects.create(name="first", total=100)
 
 
 def make_log(hay_type, direction, amount, days_ago=0):
@@ -142,7 +142,7 @@ def test_editing_amount_adjusts_total(client, first_cutting):
 
 
 def test_editing_hay_type_moves_amount_between_types(client, first_cutting):
-    second_cutting = BailCount.objects.create(name="second", total=200)
+    second_cutting = BaleCount.objects.create(name="second", total=200)
     log = make_log(first_cutting, "WITHDRAW", 5)
     first_cutting.total = 95
     first_cutting.save()

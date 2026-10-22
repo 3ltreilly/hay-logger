@@ -6,7 +6,7 @@ from django.urls import reverse
 
 
 # Create your models here.
-class BailCount(models.Model):
+class BaleCount(models.Model):
     name = models.CharField(max_length=20, help_text="Type of cutting", default="first")
     total = models.IntegerField()
 
@@ -18,7 +18,7 @@ class BailCount(models.Model):
 class Log(models.Model):
     date = models.DateTimeField(default=datetime.now)
     hay_type = models.ForeignKey(
-        "BailCount",
+        "BaleCount",
         on_delete=models.RESTRICT,
         help_text="What type of cutting?",
         default=False,

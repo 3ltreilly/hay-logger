@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
-from .models import BailCount, Log
+from .models import BaleCount, Log
 
 
 # useful functions
@@ -20,24 +20,24 @@ def burn_rate(hay_type, days):
     )
     start_date = last_log.date - datetime.timedelta(days)
     end_date = last_log.date
-    bail_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
-    bail_date = bail_type.filter(date__range=(start_date, end_date))
-    bail_count = bail_date.aggregate(Sum("amount"))["amount__sum"]
+    bale_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
+    bale_date = bale_type.filter(date__range=(start_date, end_date))
+    bale_count = bale_date.aggregate(Sum("amount"))["amount__sum"]
 
-    return round(bail_count / days, 2)
+    return round(bale_count / days, 2)
 
 
 class ListListView(ListView):
     model = Log
     template_name = "log_app/index.html"
 
-    # redefine this method to add in the BailCount object
+    # redefine this method to add in the BaleCount object
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         # Add in a QuerySet of all the books
-        context["bail_count"] = BailCount.objects.all().values()
-        for hay_type in context["bail_count"]:
+        context["bale_count"] = BaleCount.objects.all().values()
+        for hay_type in context["bale_count"]:
             # get date of last log for empty date math
             try:
                 last_log = (
@@ -109,13 +109,13 @@ class UsageOverTimeView(TemplateView):
                 running_totals[hay_type] += daily_changes[day].get(hay_type, 0)
                 data_by_type[hay_type].append(running_totals[hay_type])
 
-        # find offset to get running total to match current bail count
-        bail_counts = {
-            bail_count["name"]: bail_count["total"]
-            for bail_count in BailCount.objects.all().values("name", "total")
+        # find offset to get running total to match current bale count
+        bale_counts = {
+            bale_count["name"]: bale_count["total"]
+            for bale_count in BaleCount.objects.all().values("name", "total")
         }
         offset = {
-            hay_type: bail_counts.get(hay_type, 0) - running_totals.get(hay_type, 0)
+            hay_type: bale_counts.get(hay_type, 0) - running_totals.get(hay_type, 0)
             for hay_type in hay_types
         }
 
@@ -172,13 +172,13 @@ class LogCreate(CreateView):
         amount = form.cleaned_data.get("amount")
         direction = form.cleaned_data.get("direction")
 
-        bail_type = form.cleaned_data.get("hay_type")
+        bale_type = form.cleaned_data.get("hay_type")
         if direction == "WITHDRAW":
-            bail_type.total -= amount
+            bale_type.total -= amount
         elif direction == "DEPOSIT":
-            bail_type.total += amount
+            bale_type.total += amount
 
-        bail_type.save(
+        bale_type.save(
             update_fields=[
                 "total",
             ]
@@ -208,7 +208,7 @@ class LogEdit(UpdateView):
     def form_valid(self, form):
         amount = form.cleaned_data.get("amount")
         direction = form.cleaned_data.get("direction")
-        bail_type = form.cleaned_data.get("hay_type")
+        bale_type = form.cleaned_data.get("hay_type")
         # set number signs to make math easier
         if self.initial["direction"] == "WITHDRAW":
             self.initial["amount"] = -self.initial["amount"]
@@ -216,18 +216,18 @@ class LogEdit(UpdateView):
             amount = -amount
 
         # check for changing hay type
-        if self.initial["hay_type"] == bail_type:
-            bail_type.total += amount - self.initial["amount"]
-            bail_type.save(
+        if self.initial["hay_type"] == bale_type:
+            bale_type.total += amount - self.initial["amount"]
+            bale_type.save(
                 update_fields=[
                     "total",
                 ]
             )
         else:
-            bail_type.total += amount
+            bale_type.total += amount
             self.initial["hay_type"].total -= self.initial["amount"]
 
-            bail_type.save(
+            bale_type.save(
                 update_fields=[
                     "total",
                 ]
@@ -263,14 +263,14 @@ class LogDelete(DeleteView):
     def form_valid(self, form):
         amount = self.object.amount
         direction = self.object.direction
-        bail_type = self.object.hay_type
+        bale_type = self.object.hay_type
         # set number signs to make math easier
         if direction == "WITHDRAW":
             amount = -amount
 
-        bail_type.total -= amount
+        bale_type.total -= amount
 
-        bail_type.save(
+        bale_type.save(
             update_fields=[
                 "total",
             ]
