@@ -8,18 +8,41 @@ on:
 
 jobs:
 
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    # same poetry version as the Dockerfile
+    - name: Install poetry
+      run: pip install poetry==1.8.0
+    # dev group has pytest and pytest-django
+    - name: Install dependencies
+      run: poetry install --without upload
+    - name: Run tests
+      run: poetry run pytest
+
   build:
 
+    # only build and push if the tests pass
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: docker build --no-cache --platform linux/amd64 -t 3ltreilly/hay-logger .
+    # pull requests build the image as a check but never publish it
     - name: Log in to Docker Hub
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
     - name: push to docker hub
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: docker push 3ltreilly/hay-logger
