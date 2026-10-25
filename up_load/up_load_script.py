@@ -1,6 +1,6 @@
 """Script to add logs from a csv to the database
 
-I didn't track bails properly, so the totals will not match
+I didn't track bales properly, so the totals will not match
 what we have now if you add up all rows
 
 """

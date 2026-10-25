@@ -6,38 +6,38 @@ import pytz
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
-from .models import BailCount, Log
+from .models import BaleCount, Log
 
 
 # useful functions
 def burn_rate(hay_type, days):
-    last_log = (
-        Log.objects.filter(hay_type__exact=hay_type)
-        .filter(direction__exact="WITHDRAW")
-        .latest("date")
-    )
-    start_date = last_log.date - datetime.timedelta(days)
-    end_date = last_log.date
-    bail_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
-    bail_date = bail_type.filter(date__range=(start_date, end_date))
-    bail_count = bail_date.aggregate(Sum("amount"))["amount__sum"]
+    # bales used per day over the `days` before the latest withdrawal; 0 if never used
+    withdrawals = Log.objects.filter(hay_type__exact=hay_type, direction__exact="WITHDRAW")
+    last_log = withdrawals.order_by("-date").first()
+    if last_log is None:
+        return 0
 
-    return round(bail_count / days, 2)
+    start_date = last_log.date - datetime.timedelta(days)
+    in_range = withdrawals.filter(date__range=(start_date, last_log.date))
+    bale_count = in_range.aggregate(Sum("amount"))["amount__sum"] or 0
+
+    return round(bale_count / days, 2)
 
 
 class ListListView(ListView):
     model = Log
     template_name = "log_app/index.html"
 
-    # redefine this method to add in the BailCount object
+    # redefine this method to add in the BaleCount object
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         # Add in a QuerySet of all the books
-        context["bail_count"] = BailCount.objects.all().values()
-        for hay_type in context["bail_count"]:
+        context["bale_count"] = BaleCount.objects.all().values()
+        for hay_type in context["bale_count"]:
             # get date of last log for empty date math
             try:
                 last_log = (
@@ -46,13 +46,15 @@ class ListListView(ListView):
                     .latest("date")
                 )
             except Log.DoesNotExist:
-                pass
+                continue
             hay_type["sixty"] = burn_rate(hay_type["id"], 60)
             hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
             hay_type["one_year"] = burn_rate(hay_type["id"], 365)
-            hay_type["empty_date"] = (
-                datetime.timedelta(hay_type["total"] / hay_type["one_year"]) + last_log.date
-            ).date()
+            # too little usage to predict when the barn empties; the template shows a blank
+            if hay_type["one_year"]:
+                hay_type["empty_date"] = (
+                    datetime.timedelta(hay_type["total"] / hay_type["one_year"]) + last_log.date
+                ).date()
             hay_type["throw_down"] = round(
                 (datetime.datetime.now(pytz.utc) - last_log.date).days * hay_type["one_year"]
             )
@@ -79,18 +81,15 @@ class UsageOverTimeView(TemplateView):
         context["start_date"] = self.request.GET.get("start_date", "")
         context["end_date"] = self.request.GET.get("end_date", "")
 
-        logs = Log.objects.order_by("date")
-        if start_date:
-            logs = logs.filter(date__date__gte=start_date)
-        if end_date:
-            logs = logs.filter(date__date__lte=end_date)
-
-        logs = logs.values("date", "hay_type__name", "direction", "amount")
+        # use every log, not just the ones in the date range: the offset below lines the
+        # running total up with today's total, so it has to run all the way to today
+        logs = Log.objects.order_by("date").values("date", "hay_type__name", "direction", "amount")
 
         daily_changes = {}
         hay_types = []
         for entry in logs:
-            day = entry["date"].date().isoformat()
+            # dates come back in UTC; group by the local day, like the date filter does
+            day = timezone.localtime(entry["date"]).date().isoformat()
             hay_type_name = entry["hay_type__name"]
             change = entry["amount"] if entry["direction"] == "DEPOSIT" else -entry["amount"]
 
@@ -100,24 +99,33 @@ class UsageOverTimeView(TemplateView):
             if hay_type_name not in hay_types:
                 hay_types.append(hay_type_name)
 
-        labels = sorted(daily_changes.keys())
+        all_days = sorted(daily_changes.keys())
         running_totals = {hay_type: 0 for hay_type in hay_types}
         data_by_type = {hay_type: [] for hay_type in hay_types}
 
-        for day in labels:
+        for day in all_days:
             for hay_type in hay_types:
                 running_totals[hay_type] += daily_changes[day].get(hay_type, 0)
                 data_by_type[hay_type].append(running_totals[hay_type])
 
-        # find offset to get running total to match current bail count
-        bail_counts = {
-            bail_count["name"]: bail_count["total"]
-            for bail_count in BailCount.objects.all().values("name", "total")
+        # find offset to get running total to match current bale count
+        bale_counts = {
+            bale_count["name"]: bale_count["total"]
+            for bale_count in BaleCount.objects.all().values("name", "total")
         }
         offset = {
-            hay_type: bail_counts.get(hay_type, 0) - running_totals.get(hay_type, 0)
+            hay_type: bale_counts.get(hay_type, 0) - running_totals.get(hay_type, 0)
             for hay_type in hay_types
         }
+
+        # now trim to the requested range (ISO date strings sort the same as dates)
+        in_range = [
+            index
+            for index, day in enumerate(all_days)
+            if (not start_date or day >= start_date.isoformat())
+            and (not end_date or day <= end_date.isoformat())
+        ]
+        labels = [all_days[index] for index in in_range]
 
         color_palette = [
             ("rgba(75, 192, 192, 1)", "rgba(75, 192, 192, 0.2)"),
@@ -128,7 +136,7 @@ class UsageOverTimeView(TemplateView):
         for index, hay_type in enumerate(hay_types):
             border_color, background_color = color_palette[index % len(color_palette)]
             # apply offset to running totals
-            plot_data = [num + offset[hay_type] for num in data_by_type[hay_type]]
+            plot_data = [data_by_type[hay_type][index] + offset[hay_type] for index in in_range]
             datasets.append(
                 {
                     "label": hay_type.capitalize(),
@@ -162,20 +170,23 @@ class LogCreate(CreateView):
     def get_initial(self):
         # pre-populate the number of horse with the value from the latest log
         initial_data = super(LogCreate, self).get_initial()
-        initial_data["horse_count"] = Log.objects.latest("date").horse_count
+        try:
+            initial_data["horse_count"] = Log.objects.latest("date").horse_count
+        except Log.DoesNotExist:
+            pass
         return initial_data
 
     def form_valid(self, form):
         amount = form.cleaned_data.get("amount")
         direction = form.cleaned_data.get("direction")
 
-        bail_type = form.cleaned_data.get("hay_type")
+        bale_type = form.cleaned_data.get("hay_type")
         if direction == "WITHDRAW":
-            bail_type.total -= amount
+            bale_type.total -= amount
         elif direction == "DEPOSIT":
-            bail_type.total += amount
+            bale_type.total += amount
 
-        bail_type.save(
+        bale_type.save(
             update_fields=[
                 "total",
             ]
@@ -190,8 +201,8 @@ class LogEdit(UpdateView):
     model = Log
     fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
 
-    def get_context_data(self):
-        context = super(LogEdit, self).get_context_data()
+    def get_context_data(self, **kwargs):
+        context = super(LogEdit, self).get_context_data(**kwargs)
         context["amount_init"] = self.object.amount
         return context
 
@@ -205,7 +216,7 @@ class LogEdit(UpdateView):
     def form_valid(self, form):
         amount = form.cleaned_data.get("amount")
         direction = form.cleaned_data.get("direction")
-        bail_type = form.cleaned_data.get("hay_type")
+        bale_type = form.cleaned_data.get("hay_type")
         # set number signs to make math easier
         if self.initial["direction"] == "WITHDRAW":
             self.initial["amount"] = -self.initial["amount"]
@@ -213,18 +224,18 @@ class LogEdit(UpdateView):
             amount = -amount
 
         # check for changing hay type
-        if self.initial["hay_type"] == bail_type:
-            bail_type.total += amount - self.initial["amount"]
-            bail_type.save(
+        if self.initial["hay_type"] == bale_type:
+            bale_type.total += amount - self.initial["amount"]
+            bale_type.save(
                 update_fields=[
                     "total",
                 ]
             )
         else:
-            bail_type.total += amount
+            bale_type.total += amount
             self.initial["hay_type"].total -= self.initial["amount"]
 
-            bail_type.save(
+            bale_type.save(
                 update_fields=[
                     "total",
                 ]
@@ -260,14 +271,14 @@ class LogDelete(DeleteView):
     def form_valid(self, form):
         amount = self.object.amount
         direction = self.object.direction
-        bail_type = self.object.hay_type
+        bale_type = self.object.hay_type
         # set number signs to make math easier
         if direction == "WITHDRAW":
             amount = -amount
 
-        bail_type.total -= amount
+        bale_type.total -= amount
 
-        bail_type.save(
+        bale_type.save(
             update_fields=[
                 "total",
             ]

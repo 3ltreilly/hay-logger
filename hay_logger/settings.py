@@ -10,10 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import tomllib
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Shown in the page footer; read from pyproject.toml so it can't go stale
+with open(BASE_DIR / "pyproject.toml", "rb") as f:
+    APP_VERSION = tomllib.load(f)["tool"]["poetry"]["version"]
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,6 +37,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "milhouse.local",
     "192.168.7.134",
+    "192.168.7.142",
 ]
 
 
@@ -45,7 +51,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "log_app",
-    "django_plotly_dash.apps.DjangoPlotlyDashConfig",
 ]
 
 MIDDLEWARE = [
@@ -71,6 +76,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "log_app.context_processors.app_version",
             ],
         },
     },

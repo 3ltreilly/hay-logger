@@ -30,24 +30,24 @@
         <tr class="uppercase font-semibold text-sm">
             <th class="px-4 py-2">Hay Type</th>
             <th class="px-4 py-2">Total</th>
-            <th class="px-4 py-2">60 day bail/day</th>
+            <th class="px-4 py-2">60 day bale/day</th>
             <!-- <th class="px-4 py-2">180 day burn rate</th> -->
-            <th class="px-4 py-2">1 year bail/day</th>
+            <th class="px-4 py-2">1 year bale/day</th>
             <th class="px-4 py-2">Empty Barn Date</th>
             <th class="px-4 py-2">Throw down</th>
 
         </tr>
         </thead>
         <tbody>
-    {% for bail in bail_count %}
+    {% for bale in bale_count %}
     <tr class="{% cycle 'bg-gray-300' 'bg-white-100' %}">
-        <td class="border px-4 py-2 text-center">{{ bail.name }}</td>
-        <td class="border px-4 py-2 text-center">{{ bail.total }}</td>
-        <td class="border px-4 py-2 text-center">{{ bail.sixty }}</td>
-        <!-- <td class="border px-4 py-2 text-center">{{ bail.one_eight }}</td> -->
-        <td class="border px-4 py-2 text-center">{{ bail.one_year }}</td>
-        <td class="border px-4 py-2 text-center">{{ bail.empty_date }}</td>
-        <td class="border px-4 py-2 text-center">{{ bail.throw_down }}</td>
+        <td class="border px-4 py-2 text-center">{{ bale.name }}</td>
+        <td class="border px-4 py-2 text-center">{{ bale.total }}</td>
+        <td class="border px-4 py-2 text-center">{{ bale.sixty }}</td>
+        <!-- <td class="border px-4 py-2 text-center">{{ bale.one_eight }}</td> -->
+        <td class="border px-4 py-2 text-center">{{ bale.one_year }}</td>
+        <td class="border px-4 py-2 text-center">{{ bale.empty_date }}</td>
+        <td class="border px-4 py-2 text-center">{{ bale.throw_down }}</td>
 
     </tr>
     </tbody>
