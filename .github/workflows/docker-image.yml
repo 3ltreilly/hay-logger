@@ -14,17 +14,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    # same uv version as the Dockerfile; uv installs the Python in .python-version itself
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
       with:
-        python-version: "3.11"
-    # same poetry version as the Dockerfile
-    - name: Install poetry
-      run: pip install poetry==1.8.0
-    # dev group has pytest and pytest-django
+        version: "0.11.2"
+    # dev group (pytest, pytest-django) is installed by default; --locked fails if uv.lock is stale
     - name: Install dependencies
-      run: poetry install --without upload
+      run: uv sync --locked
     - name: Run tests
-      run: poetry run pytest
+      run: uv run pytest
 
   build:
 

@@ -6,12 +6,17 @@ burn rates and a usage chart. One app, `log_app`. SQLite database at `db/db.sqli
 ## Commands
 
 ```bash
-poetry install                 # dependencies (dev group includes pytest, pytest-django, ruff)
-python manage.py runserver     # local dev server
-pytest                         # all tests (pytest-django; config in pyproject.toml)
-python manage.py makemigrations --check --dry-run   # models match migrations?
-ruff check --fix . && ruff format .                 # also run by pre-commit
+uv sync                           # dependencies into .venv (dev group: pytest, pytest-django, ruff)
+uv run python manage.py runserver # local dev server
+uv run pytest                     # all tests (pytest-django; config in pyproject.toml)
+uv run python manage.py makemigrations --check --dry-run   # models match migrations?
+uv run ruff check --fix . && uv run ruff format .          # also run by pre-commit
+uv add <pkg> / uv add --dev <pkg> # add a dependency (ask first); updates uv.lock
 ```
+
+Dependencies are managed with uv (`pyproject.toml` `[project]` + `uv.lock`), not Poetry.
+`[tool.uv] package = false`: the project itself isn't installed, only its dependencies.
+The `upload` group (pandas, for `up_load/`) is opt-in: `uv sync --group upload`.
 
 ## Deployment
 
@@ -21,8 +26,9 @@ it with `db/` mounted as a volume. See `wip.sh` for the server commands. Pull re
 `main` run the tests and build the image but never push it. On start the container runs
 `migrate`, then `runserver`.
 
-CI installs from a clean environment, so it is the real test of `poetry.lock`. A local venv
-can hold packages the lock doesn't pin (e.g. an old `setuptools`) and hide breakage.
+CI installs from a clean environment (`uv sync --locked`), so it is the real test of
+`uv.lock`. A local venv can hold packages the lock doesn't pin (e.g. an old `setuptools`) and
+hide breakage; `rm -rf .venv && uv sync` gives you the same clean install.
 
 ## Gotchas
 

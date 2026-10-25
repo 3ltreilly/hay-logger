@@ -11,20 +11,30 @@
         "statusBar.background": "#5537c9",
         "statusBar.foreground": "#e7e7e7",
         "statusBarItem.hoverBackground": "#775fd4",
-        "statusBarItem.remoteBackground": "#5537c9",
+        "statusBarItem.remoteBackground": "#d06a4f",
         "statusBarItem.remoteForeground": "#e7e7e7",
         "titleBar.activeBackground": "#5537c9",
         "titleBar.activeForeground": "#e7e7e7",
         "titleBar.inactiveBackground": "#5537c999",
-        "titleBar.inactiveForeground": "#e7e7e799"
+        "titleBar.inactiveForeground": "#e7e7e799",
+        "activityBar.activeBorder": "#e7e7e7",
+        "activityBarTop.activeBackground": "#775fd4",
+        "activityBarTop.activeBorder": "#e7e7e7",
+        "activityBarTop.background": "#775fd4",
+        "activityBarTop.foreground": "#e7e7e7",
+        "activityBarTop.inactiveForeground": "#e7e7e799",
+        "commandCenter.foreground": "#e7e7e7",
+        "statusBar.debuggingBackground": "#5537c9",
+        "statusBar.debuggingForeground": "#e7e7e7",
+        "statusBar.inactiveBackground": "#5537c9"
     },
     "peacock.color": "#5537c9",
     "cSpell.words": [
         "loglist"
     ],
     "python.testing.pytestArgs": [
-        "."
+        "log_app"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
 }
