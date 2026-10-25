@@ -13,20 +13,17 @@ from .models import BaleCount, Log
 
 # useful functions
 def burn_rate(hay_type, days):
-    # never return a zero burn rate, send back something obviously wrong
-    bogus_burn_rate = 0.01
-    the_log = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
-    if the_log:
-        last_log = the_log.latest("date")
-        start_date = last_log.date - datetime.timedelta(days)
-        end_date = last_log.date
-        bale_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
-        bale_date = bale_type.filter(date__range=(start_date, end_date))
-        bale_count = bale_date.aggregate(Sum("amount"))["amount__sum"]
+    # bales used per day over the `days` before the latest withdrawal; 0 if never used
+    withdrawals = Log.objects.filter(hay_type__exact=hay_type, direction__exact="WITHDRAW")
+    last_log = withdrawals.order_by("-date").first()
+    if last_log is None:
+        return 0
 
-        return max(bogus_burn_rate, round(bale_count / days, 2))
-    else:
-        return bogus_burn_rate
+    start_date = last_log.date - datetime.timedelta(days)
+    in_range = withdrawals.filter(date__range=(start_date, last_log.date))
+    bale_count = in_range.aggregate(Sum("amount"))["amount__sum"] or 0
+
+    return round(bale_count / days, 2)
 
 
 class ListListView(ListView):
@@ -52,9 +49,11 @@ class ListListView(ListView):
             hay_type["sixty"] = burn_rate(hay_type["id"], 60)
             hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
             hay_type["one_year"] = burn_rate(hay_type["id"], 365)
-            hay_type["empty_date"] = (
-                datetime.timedelta(hay_type["total"] / hay_type["one_year"]) + last_log.date
-            ).date()
+            # too little usage to predict when the barn empties; the template shows a blank
+            if hay_type["one_year"]:
+                hay_type["empty_date"] = (
+                    datetime.timedelta(hay_type["total"] / hay_type["one_year"]) + last_log.date
+                ).date()
             hay_type["throw_down"] = round(
                 (datetime.datetime.now(pytz.utc) - last_log.date).days * hay_type["one_year"]
             )
