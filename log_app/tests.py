@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -47,3 +48,10 @@ class UsageOverTimeViewTests(TestCase):
         self.assertEqual(labels, ["2024-01-15", "2024-02-01"])
         self.assertEqual(response.context["start_date"], "2024-01-15")
         self.assertEqual(response.context["end_date"], "2024-02-01")
+
+
+class AppVersionTests(TestCase):
+    def test_version_is_shown_in_footer(self):
+        response = self.client.get(reverse("index"))
+
+        self.assertContains(response, f"v{settings.APP_VERSION}")

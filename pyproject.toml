@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "hay_logger"
-version = "0.1.0"
+version = "0.2.0"
 description = "track hay in the barn"
 authors = ["Bernie Reilly <reilly_bernie@mac.com>"]
 readme = "readme.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 Django = "^5.0.6"
 pytz = "^2024.1"
 gunicorn = "^22.0.0"
@@ -30,6 +30,7 @@ python_files = ["tests.py", "test_*.py"]
 # Same as Black.
 line-length = 100
 indent-width = 4
+target-version = "py311"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
