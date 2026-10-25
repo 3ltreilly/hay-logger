@@ -24,7 +24,14 @@ Push to `main` -> GitHub Actions runs `pytest`, then builds the image and pushes
 Docker Hub `3ltreilly/hay-logger` -> the Synology server (`milhouse.local`) pulls it and runs
 it with `db/` mounted as a volume. See `wip.sh` for the server commands. Pull requests to
 `main` run the tests and build the image but never push it. On start the container runs
-`migrate`, then `runserver`.
+`migrate`, then gunicorn (WhiteNoise serves the static files `collectstatic` gathers at
+build time).
+
+Settings come from environment variables with local-development defaults: `DJANGO_DEBUG`
+(on unless set; the Dockerfile sets it to 0) and `DJANGO_SECRET_KEY` (a throwaway default).
+With debug off, settings refuse to load without a real key. The server's key is in an env
+file on the Synology (`/volume1/docker/hay-logger/hay-logger.env`, passed with
+`--env-file`), never in git or the image, which is public on Docker Hub.
 
 CI installs from a clean environment (`uv sync --locked`), so it is the real test of
 `uv.lock`. A local venv can hold packages the lock doesn't pin (e.g. an old `setuptools`) and
