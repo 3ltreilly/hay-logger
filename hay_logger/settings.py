@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Shown in the page footer; read from pyproject.toml so it can't go stale
 with open(BASE_DIR / "pyproject.toml", "rb") as f:
-    APP_VERSION = tomllib.load(f)["tool"]["poetry"]["version"]
+    APP_VERSION = tomllib.load(f)["project"]["version"]
 
 
 # Quick-start development settings - unsuitable for production

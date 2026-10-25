@@ -1,25 +1,32 @@
-[tool.poetry]
+[project]
 name = "hay_logger"
 version = "0.2.0"
 description = "track hay in the barn"
-authors = ["Bernie Reilly <reilly_bernie@mac.com>"]
+authors = [{ name = "Bernie Reilly", email = "reilly_bernie@mac.com" }]
 readme = "readme.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.0.6,<6",
+    "pytz>=2024.1,<2025",
+    "gunicorn>=22.0.0,<23",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-Django = "^5.0.6"
-pytz = "^2024.1"
-gunicorn = "^22.0.0"
+[dependency-groups]
+dev = [
+    "pytest>=8.2.2,<9",
+    "pre-commit>=3.7.1,<4",
+    "ruff>=0.11.0,<0.12",
+    "pytest-django>=4.14.0,<5",
+    "pytest-cov>=7.1.0",
+]
+# only for up_load/up_load_script.py; install with `uv sync --group upload`
+upload = [
+    "pandas>=2.2.2,<3",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.2"
-pre-commit = "^3.7.1"
-ruff = "^0.11.0"
-pytest-django = "^4.14.0"
-
-
-[tool.poetry.group.upload.dependencies]
-pandas = "^2.2.2"
+[tool.uv]
+# this is a Django site, not a library: uv installs the dependencies but not the project itself
+package = false
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "hay_logger.settings"
@@ -37,9 +44,3 @@ target-version = "py311"
 # McCabe complexity (`C901`) by default.
 select = ["E4", "E7", "E9", "F", "I"]
 ignore = []
-
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
