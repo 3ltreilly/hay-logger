@@ -48,7 +48,7 @@ class ListListView(ListView):
                     .latest("date")
                 )
             except Log.DoesNotExist:
-                return context
+                continue
             hay_type["sixty"] = burn_rate(hay_type["id"], 60)
             hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
             hay_type["one_year"] = burn_rate(hay_type["id"], 365)
