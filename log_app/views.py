@@ -195,8 +195,8 @@ class LogEdit(UpdateView):
     model = Log
     fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
 
-    def get_context_data(self):
-        context = super(LogEdit, self).get_context_data()
+    def get_context_data(self, **kwargs):
+        context = super(LogEdit, self).get_context_data(**kwargs)
         context["amount_init"] = self.object.amount
         return context
 

@@ -1,8 +1,7 @@
-from datetime import datetime
-
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 
 # Create your models here.
@@ -16,7 +15,7 @@ class BaleCount(models.Model):
 
 
 class Log(models.Model):
-    date = models.DateTimeField(default=datetime.now)
+    date = models.DateTimeField(default=timezone.now)
     hay_type = models.ForeignKey(
         "BaleCount",
         on_delete=models.RESTRICT,
