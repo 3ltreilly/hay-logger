@@ -6,6 +6,7 @@ import pytz
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
 from .models import BaleCount, Log
@@ -80,18 +81,15 @@ class UsageOverTimeView(TemplateView):
         context["start_date"] = self.request.GET.get("start_date", "")
         context["end_date"] = self.request.GET.get("end_date", "")
 
-        logs = Log.objects.order_by("date")
-        if start_date:
-            logs = logs.filter(date__date__gte=start_date)
-        if end_date:
-            logs = logs.filter(date__date__lte=end_date)
-
-        logs = logs.values("date", "hay_type__name", "direction", "amount")
+        # use every log, not just the ones in the date range: the offset below lines the
+        # running total up with today's total, so it has to run all the way to today
+        logs = Log.objects.order_by("date").values("date", "hay_type__name", "direction", "amount")
 
         daily_changes = {}
         hay_types = []
         for entry in logs:
-            day = entry["date"].date().isoformat()
+            # dates come back in UTC; group by the local day, like the date filter does
+            day = timezone.localtime(entry["date"]).date().isoformat()
             hay_type_name = entry["hay_type__name"]
             change = entry["amount"] if entry["direction"] == "DEPOSIT" else -entry["amount"]
 
@@ -101,11 +99,11 @@ class UsageOverTimeView(TemplateView):
             if hay_type_name not in hay_types:
                 hay_types.append(hay_type_name)
 
-        labels = sorted(daily_changes.keys())
+        all_days = sorted(daily_changes.keys())
         running_totals = {hay_type: 0 for hay_type in hay_types}
         data_by_type = {hay_type: [] for hay_type in hay_types}
 
-        for day in labels:
+        for day in all_days:
             for hay_type in hay_types:
                 running_totals[hay_type] += daily_changes[day].get(hay_type, 0)
                 data_by_type[hay_type].append(running_totals[hay_type])
@@ -120,6 +118,15 @@ class UsageOverTimeView(TemplateView):
             for hay_type in hay_types
         }
 
+        # now trim to the requested range (ISO date strings sort the same as dates)
+        in_range = [
+            index
+            for index, day in enumerate(all_days)
+            if (not start_date or day >= start_date.isoformat())
+            and (not end_date or day <= end_date.isoformat())
+        ]
+        labels = [all_days[index] for index in in_range]
+
         color_palette = [
             ("rgba(75, 192, 192, 1)", "rgba(75, 192, 192, 0.2)"),
             ("rgba(255, 99, 132, 1)", "rgba(255, 99, 132, 0.2)"),
@@ -129,7 +136,7 @@ class UsageOverTimeView(TemplateView):
         for index, hay_type in enumerate(hay_types):
             border_color, background_color = color_palette[index % len(color_palette)]
             # apply offset to running totals
-            plot_data = [num + offset[hay_type] for num in data_by_type[hay_type]]
+            plot_data = [data_by_type[hay_type][index] + offset[hay_type] for index in in_range]
             datasets.append(
                 {
                     "label": hay_type.capitalize(),
