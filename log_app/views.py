@@ -13,18 +13,20 @@ from .models import BaleCount, Log
 
 # useful functions
 def burn_rate(hay_type, days):
-    last_log = (
-        Log.objects.filter(hay_type__exact=hay_type)
-        .filter(direction__exact="WITHDRAW")
-        .latest("date")
-    )
-    start_date = last_log.date - datetime.timedelta(days)
-    end_date = last_log.date
-    bale_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
-    bale_date = bale_type.filter(date__range=(start_date, end_date))
-    bale_count = bale_date.aggregate(Sum("amount"))["amount__sum"]
+    # never return a zero burn rate, send back something obviously wrong
+    bogus_burn_rate = 0.01
+    the_log = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
+    if the_log:
+        last_log = the_log.latest("date")
+        start_date = last_log.date - datetime.timedelta(days)
+        end_date = last_log.date
+        bale_type = Log.objects.filter(hay_type__exact=hay_type).filter(direction__exact="WITHDRAW")
+        bale_date = bale_type.filter(date__range=(start_date, end_date))
+        bale_count = bale_date.aggregate(Sum("amount"))["amount__sum"]
 
-    return round(bale_count / days, 2)
+        return max(bogus_burn_rate, round(bale_count / days, 2))
+    else:
+        return bogus_burn_rate
 
 
 class ListListView(ListView):
@@ -46,7 +48,7 @@ class ListListView(ListView):
                     .latest("date")
                 )
             except Log.DoesNotExist:
-                pass
+                return context
             hay_type["sixty"] = burn_rate(hay_type["id"], 60)
             hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
             hay_type["one_year"] = burn_rate(hay_type["id"], 365)
