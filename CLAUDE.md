@@ -24,6 +24,10 @@ See `wip.sh` for the server commands. The container runs `runserver`; it does no
 - **Migrations:** the production database has `log_app` migrations 0001–0008 applied
   (verified to match the local files). Never delete, rename or regenerate them. When a
   model changes, run `makemigrations` and commit the new file with the model change.
+  0009 (table rename) and 0010 (`Log.date` default) are committed but not yet applied on
+  the server: run `migrate` there before deploying them, since the container won't.
+- **Time zones:** `USE_TZ = True`. Use `django.utils.timezone.now()`, never
+  `datetime.now()`. `log_app/tests.py` still builds naive dates (the RuntimeWarnings).
 - **Stored totals:** `BaleCount.total` is a running total updated by hand in the
   `form_valid` methods of `LogCreate`, `LogEdit` and `LogDelete`. Any change to how logs
   are saved must keep it in sync. The usage chart applies an offset because historic totals
@@ -31,8 +35,13 @@ See `wip.sh` for the server commands. The container runs `runserver`; it does no
 - **Naming:** `BaleCount` is really a hay type (first/second cutting). It was renamed
   from the misspelled `BailCount` in migration 0009, so the old spelling remains only in
   migrations 0003–0008. Don't edit those files.
-- **`log_app/test_bugs.py`:** the tests marked BUG fail on purpose. The owner is fixing
-  them as a learning exercise; don't fix them unless asked. SAFETY NET tests must stay green.
+- **`log_app/test_bugs.py`:** the BUG tests have all been fixed and now act as regression
+  tests; every test in the file must stay green.
+- **Burn rates:** `burn_rate()` returns the real rate (0 when a hay type has no usage), not
+  a sentinel. `ListListView` leaves `empty_date` unset when the yearly rate is 0, so the
+  template shows a blank. Known open bug, not covered by tests: the `except
+  Log.DoesNotExist: return context` in `ListListView` stops the loop at the first hay type
+  with no withdrawals. The owner is fixing it; don't fix it unless asked.
 
 ## Working style
 
