@@ -17,6 +17,7 @@ dev = [
     "pre-commit>=3.7.1,<4",
     "ruff>=0.11.0,<0.12",
     "pytest-django>=4.14.0,<5",
+    "pytest-cov>=7.1.0",
 ]
 # only for up_load/up_load_script.py; install with `uv sync --group upload`
 upload = [
