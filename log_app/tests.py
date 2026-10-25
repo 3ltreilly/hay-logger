@@ -1,6 +1,8 @@
 import datetime
+import importlib
 import json
 
+from django.apps import apps
 from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
@@ -77,3 +79,33 @@ class AppVersionTests(TestCase):
         response = self.client.get(reverse("index"))
 
         self.assertContains(response, f"v{settings.APP_VERSION}")
+
+
+class BalanceCorrectionMigrationTests(TestCase):
+    # remove this along with the BaleCount.total field: it runs the migration's function
+    # against today's models, which only works while they still have `total`
+    def test_correction_logs_make_totals_match_the_old_stored_totals(self):
+        migration = importlib.import_module("log_app.migrations.0011_balance_corrections")
+        first = BaleCount.objects.create(name="first", total=120)  # logs say 100
+        second = BaleCount.objects.create(name="second", total=40)  # logs say 50
+        third = BaleCount.objects.create(name="third", total=0)  # logs agree
+        start = timezone.make_aware(datetime.datetime(2020, 1, 1, 8, 0, 0))
+        for hay_type, direction, amount in [
+            (first, "DEPOSIT", 100),
+            (second, "DEPOSIT", 60),
+            (second, "WITHDRAW", 10),
+        ]:
+            Log.objects.create(date=start, hay_type=hay_type, direction=direction, amount=amount)
+
+        migration.add_corrections(apps, None)
+
+        self.assertEqual(first.current_total(), 120)
+        self.assertEqual(second.current_total(), 40)
+        self.assertEqual(third.current_total(), 0)
+        corrections = Log.objects.filter(notes=migration.NOTE)
+        self.assertEqual(corrections.count(), 2)
+        self.assertTrue(all(log.date == start for log in corrections))
+
+        migration.remove_corrections(apps, None)
+
+        self.assertEqual(first.current_total(), 100)

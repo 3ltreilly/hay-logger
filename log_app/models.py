@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q, Sum
 from django.urls import reverse
 from django.utils import timezone
 
@@ -7,11 +8,21 @@ from django.utils import timezone
 # Create your models here.
 class BaleCount(models.Model):
     name = models.CharField(max_length=20, help_text="Type of cutting", default="first")
+    # no longer updated or read: the total comes from the logs (current_total). Kept only so
+    # migration 0011 can read the old value; remove it in a later migration.
     total = models.IntegerField()
 
     def __str__(self):
         """String for representing the Model object."""
         return str(self.name)
+
+    def current_total(self):
+        """Bales in the barn: everything delivered minus everything used."""
+        totals = self.log_set.aggregate(
+            deposits=Sum("amount", filter=Q(direction="DEPOSIT"), default=0),
+            withdrawals=Sum("amount", filter=Q(direction="WITHDRAW"), default=0),
+        )
+        return totals["deposits"] - totals["withdrawals"]
 
 
 class Log(models.Model):

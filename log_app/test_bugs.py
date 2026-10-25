@@ -113,7 +113,7 @@ def edit_log(client, log, **changes):
 
 
 def test_adding_a_withdrawal_reduces_total(client, first_cutting):
-    make_log(first_cutting, "DEPOSIT", 1, days_ago=10)  # so the add page has a horse_count
+    make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
     client.post(
         reverse("log-add"),
         {
@@ -125,42 +125,34 @@ def test_adding_a_withdrawal_reduces_total(client, first_cutting):
         },
     )
 
-    first_cutting.refresh_from_db()
-    assert first_cutting.total == 93
+    assert first_cutting.current_total() == 93
 
 
 def test_editing_amount_adjusts_total(client, first_cutting):
-    # make_log() skips the view, so set the total the view would have left behind
+    make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
     log = make_log(first_cutting, "WITHDRAW", 5)
-    first_cutting.total = 95
-    first_cutting.save()
 
     edit_log(client, log, amount=8)
 
-    first_cutting.refresh_from_db()
-    assert first_cutting.total == 92
+    assert first_cutting.current_total() == 92
 
 
 def test_editing_hay_type_moves_amount_between_types(client, first_cutting):
     second_cutting = BaleCount.objects.create(name="second", total=200)
+    make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
+    make_log(second_cutting, "DEPOSIT", 200, days_ago=10)
     log = make_log(first_cutting, "WITHDRAW", 5)
-    first_cutting.total = 95
-    first_cutting.save()
 
     edit_log(client, log, hay_type=second_cutting.pk)
 
-    first_cutting.refresh_from_db()
-    second_cutting.refresh_from_db()
-    assert first_cutting.total == 100
-    assert second_cutting.total == 195
+    assert first_cutting.current_total() == 100
+    assert second_cutting.current_total() == 195
 
 
 def test_deleting_a_withdrawal_restores_total(client, first_cutting):
+    make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
     log = make_log(first_cutting, "WITHDRAW", 5)
-    first_cutting.total = 95
-    first_cutting.save()
 
     client.post(reverse("item-delete", args=[log.pk]))
 
-    first_cutting.refresh_from_db()
-    assert first_cutting.total == 100
+    assert first_cutting.current_total() == 100

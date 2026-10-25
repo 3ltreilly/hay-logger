@@ -5,7 +5,7 @@ import json
 import pytz
 from django.db.models import Sum
 from django.http import HttpResponse
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
@@ -35,8 +35,11 @@ class ListListView(ListView):
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        # Add in a QuerySet of all the books
-        context["bale_count"] = BaleCount.objects.all().values()
+        # one row per hay type for the summary table
+        context["bale_count"] = [
+            {"id": bale.id, "name": bale.name, "total": bale.current_total()}
+            for bale in BaleCount.objects.all()
+        ]
         for hay_type in context["bale_count"]:
             # get date of last log for empty date math
             try:
@@ -81,8 +84,8 @@ class UsageOverTimeView(TemplateView):
         context["start_date"] = self.request.GET.get("start_date", "")
         context["end_date"] = self.request.GET.get("end_date", "")
 
-        # use every log, not just the ones in the date range: the offset below lines the
-        # running total up with today's total, so it has to run all the way to today
+        # use every log, not just the ones in the date range: the running total has to
+        # start from the first log to be right on the first day shown
         logs = Log.objects.order_by("date").values("date", "hay_type__name", "direction", "amount")
 
         daily_changes = {}
@@ -108,16 +111,6 @@ class UsageOverTimeView(TemplateView):
                 running_totals[hay_type] += daily_changes[day].get(hay_type, 0)
                 data_by_type[hay_type].append(running_totals[hay_type])
 
-        # find offset to get running total to match current bale count
-        bale_counts = {
-            bale_count["name"]: bale_count["total"]
-            for bale_count in BaleCount.objects.all().values("name", "total")
-        }
-        offset = {
-            hay_type: bale_counts.get(hay_type, 0) - running_totals.get(hay_type, 0)
-            for hay_type in hay_types
-        }
-
         # now trim to the requested range (ISO date strings sort the same as dates)
         in_range = [
             index
@@ -135,8 +128,7 @@ class UsageOverTimeView(TemplateView):
         datasets = []
         for index, hay_type in enumerate(hay_types):
             border_color, background_color = color_palette[index % len(color_palette)]
-            # apply offset to running totals
-            plot_data = [data_by_type[hay_type][index] + offset[hay_type] for index in in_range]
+            plot_data = [data_by_type[hay_type][index] for index in in_range]
             datasets.append(
                 {
                     "label": hay_type.capitalize(),
@@ -166,6 +158,7 @@ class LogCreate(CreateView):
     # This make a form to enter in data
     model = Log
     fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
+    success_url = reverse_lazy("index")
 
     def get_initial(self):
         # pre-populate the number of horse with the value from the latest log
@@ -176,88 +169,11 @@ class LogCreate(CreateView):
             pass
         return initial_data
 
-    def form_valid(self, form):
-        amount = form.cleaned_data.get("amount")
-        direction = form.cleaned_data.get("direction")
-
-        bale_type = form.cleaned_data.get("hay_type")
-        if direction == "WITHDRAW":
-            bale_type.total -= amount
-        elif direction == "DEPOSIT":
-            bale_type.total += amount
-
-        bale_type.save(
-            update_fields=[
-                "total",
-            ]
-        )
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("index")
-
 
 class LogEdit(UpdateView):
     model = Log
     fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
-
-    def get_context_data(self, **kwargs):
-        context = super(LogEdit, self).get_context_data(**kwargs)
-        context["amount_init"] = self.object.amount
-        return context
-
-    def get_initial(self):
-        self.initial = super().get_initial()
-        self.initial["hay_type"] = self.object.hay_type
-        self.initial["direction"] = self.object.direction
-        self.initial["amount"] = self.object.amount
-        # return self.initial
-
-    def form_valid(self, form):
-        amount = form.cleaned_data.get("amount")
-        direction = form.cleaned_data.get("direction")
-        bale_type = form.cleaned_data.get("hay_type")
-        # set number signs to make math easier
-        if self.initial["direction"] == "WITHDRAW":
-            self.initial["amount"] = -self.initial["amount"]
-        if direction == "WITHDRAW":
-            amount = -amount
-
-        # check for changing hay type
-        if self.initial["hay_type"] == bale_type:
-            bale_type.total += amount - self.initial["amount"]
-            bale_type.save(
-                update_fields=[
-                    "total",
-                ]
-            )
-        else:
-            bale_type.total += amount
-            self.initial["hay_type"].total -= self.initial["amount"]
-
-            bale_type.save(
-                update_fields=[
-                    "total",
-                ]
-            )
-            self.initial["hay_type"].save(
-                update_fields=[
-                    "total",
-                ]
-            )
-
-        # would like to add edit time stamp, this don't work yet
-        # notes = f"{notes} edited {datetime.datetime.now()}"
-        # form.save(
-        #     update_fields=[
-        #         "notes"
-        #     ]
-        # )
-
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("index")
+    success_url = reverse_lazy("index")
 
 
 class LogView(ListView):
@@ -267,23 +183,6 @@ class LogView(ListView):
 class LogDelete(DeleteView):
     model = Log
     success_url = reverse_lazy("index")
-
-    def form_valid(self, form):
-        amount = self.object.amount
-        direction = self.object.direction
-        bale_type = self.object.hay_type
-        # set number signs to make math easier
-        if direction == "WITHDRAW":
-            amount = -amount
-
-        bale_type.total -= amount
-
-        bale_type.save(
-            update_fields=[
-                "total",
-            ]
-        )
-        return super().form_valid(form)
 
 
 def download_csv(request):
