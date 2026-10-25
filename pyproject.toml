@@ -1,6 +1,6 @@
 [project]
 name = "hay_logger"
-version = "0.2.0"
+version = "0.3.0"
 description = "track hay in the barn"
 authors = [{ name = "Bernie Reilly", email = "reilly_bernie@mac.com" }]
 readme = "readme.md"
@@ -9,6 +9,7 @@ dependencies = [
     "django>=5.0.6,<6",
     "pytz>=2024.1,<2025",
     "gunicorn>=22.0.0,<23",
+    "whitenoise>=6.12.0,<7",
 ]
 
 [dependency-groups]
@@ -31,6 +32,8 @@ package = false
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "hay_logger.settings"
 python_files = ["tests.py", "test_*.py"]
+# staticfiles/ only exists in the Docker image, where collectstatic creates it
+filterwarnings = ["ignore:No directory at:UserWarning"]
 
 [tool.ruff]
 # Same as Black.

@@ -24,7 +24,14 @@ Push to `main` -> GitHub Actions runs `pytest`, then builds the image and pushes
 Docker Hub `3ltreilly/hay-logger` -> the Synology server (`milhouse.local`) pulls it and runs
 it with `db/` mounted as a volume. See `wip.sh` for the server commands. Pull requests to
 `main` run the tests and build the image but never push it. On start the container runs
-`migrate`, then `runserver`.
+`migrate`, then gunicorn (WhiteNoise serves the static files `collectstatic` gathers at
+build time).
+
+Settings come from environment variables with local-development defaults: `DJANGO_DEBUG`
+(on unless set; the Dockerfile sets it to 0) and `DJANGO_SECRET_KEY` (a throwaway default).
+With debug off, settings refuse to load without a real key. The server's key is in an env
+file on the Synology (`/volume1/docker/hay-logger/hay-logger.env`, passed with
+`--env-file`), never in git or the image, which is public on Docker Hub.
 
 CI installs from a clean environment (`uv sync --locked`), so it is the real test of
 `uv.lock`. A local venv can hold packages the lock doesn't pin (e.g. an old `setuptools`) and
@@ -37,15 +44,17 @@ hide breakage; `rm -rf .venv && uv sync` gives you the same clean install.
   model changes, run `makemigrations` and commit the new file with the model change.
   The container applies new migrations to the production database on start, so a merge to
   `main` with a migration in it changes the only copy of the data. Back up
-  `db/db.sqlite3` on the server before deploying one. 0009 (table rename) and 0010
-  (`Log.date` default) are the first to go out this way.
+  `db/db.sqlite3` on the server before deploying one. 0009 (table rename), 0010
+  (`Log.date` default) and 0011 (balance-correction logs, a data migration) are the first
+  to go out this way.
 - **Time zones:** `USE_TZ = True`. Use `django.utils.timezone.now()`, never
   `datetime.now()`. `log_app/tests.py` still builds naive dates (the RuntimeWarnings).
-- **Stored totals:** `BaleCount.total` is a running total updated by hand in the
-  `form_valid` methods of `LogCreate`, `LogEdit` and `LogDelete`. Any change to how logs
-  are saved must keep it in sync. The usage chart applies an offset because historic totals
-  don't match the sum of the logs, so the chart builds running totals from every log and
-  only then trims to the requested date range.
+- **Totals come from the logs:** `BaleCount.current_total()` is deposits minus withdrawals.
+  Migration 0011 added one "Balance correction" log per hay type (dated at its first log)
+  so the logs match the old stored totals. The `BaleCount.total` column is no longer read or
+  updated; it stays only until a later migration removes it (then also delete
+  `BalanceCorrectionMigrationTests` in `tests.py`). The usage chart builds running totals
+  from every log and only then trims to the requested date range.
 - **Naming:** `BaleCount` is really a hay type (first/second cutting). It was renamed
   from the misspelled `BailCount` in migration 0009, so the old spelling remains only in
   migrations 0003–0008. Don't edit those files.

@@ -9,6 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
+# production: debug off. DJANGO_SECRET_KEY comes from the env file on the server
+ENV DJANGO_DEBUG=0
+
 # uv from its official image, pinned so builds are repeatable
 COPY --from=ghcr.io/astral-sh/uv:0.11.2 /uv /bin/uv
 # use this image's Python instead of downloading one, and copy packages into the venv
@@ -29,6 +32,11 @@ COPY log_app ./log_app
 COPY manage.py ./
 COPY readme.md ./
 
+# copy static files (the admin's CSS) into STATIC_ROOT for WhiteNoise to serve. Settings
+# refuse to load without a real key when debug is off, and this step needs none, so
+# give it a throwaway one
+RUN DJANGO_SECRET_KEY=collectstatic-only python manage.py collectstatic --noinput
+
 # get the database, for debugging
 # COPY db.sqlite3 ./
 
@@ -37,9 +45,5 @@ COPY readme.md ./
 # RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
 # USER appuser
 
-# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-# CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--log-level", "debug", "hay_logger.wsgi"]
-# go to this website
-# 127.0.0.1:8000/
-
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
+# apply any new migrations, then serve the app with gunicorn (runserver is for development)
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 --workers 2 hay_logger.wsgi"]
