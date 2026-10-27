@@ -1,0 +1,9 @@
+header: Edit or delete a log
+active: true
+type: requirement
+links:
+- UN001: ABK5b5VfDFPa8aTQ8WlJ8IIVVPrXu5RP4vLj25ya_r0
+text: 'The user can edit any field of an existing log, or delete it. Totals, burn
+  rates and the chart reflect the change. Example: changing a 5-bale withdrawal into
+  a 5-bale deposit on a barn of 100 bales changes the total from 95 to 105.'
+reviewed: 0Bwq3kBV5Hlux6JPqSBsWpigGz_I-zkmfWcHTXFpQ1c

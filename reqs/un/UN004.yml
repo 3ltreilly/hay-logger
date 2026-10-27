@@ -1,0 +1,8 @@
+header: See hay stock over time
+active: true
+type: requirement
+links:
+- PRJ001: 8IXceKgrC8bt6Mj988EACwVGSEvPTmZw6nqfiPcw-oc
+text: I need to see how the amount of hay in the barn has changed over time, for any
+  period I choose.
+reviewed: F_-tWw-dEb7xm8cBxP6OGgcA1THg9m2b5XDWfUs9DNk

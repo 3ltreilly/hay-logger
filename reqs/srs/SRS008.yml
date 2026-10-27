@@ -1,0 +1,9 @@
+header: Chart date range
+active: true
+type: requirement
+links:
+- UN004: F_-tWw-dEb7xm8cBxP6OGgcA1THg9m2b5XDWfUs9DNk
+text: 'The user can limit the chart to a start date, an end date, or both. Limiting
+  the range hides days outside it but does not change the totals shown. Example: with
+  an end date of last month, the last point is the balance on that date, not today''s.'
+reviewed: -HwpKvsaThCCfGw-2fMbakxKmE5UgZgjdcovggv7_KA

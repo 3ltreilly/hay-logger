@@ -1,0 +1,8 @@
+header: Pre-fill horse count
+active: true
+type: requirement
+links:
+- UN001: ABK5b5VfDFPa8aTQ8WlJ8IIVVPrXu5RP4vLj25ya_r0
+text: The Add form pre-fills the horse count from the most recent log. With no logs,
+  the field starts empty.
+reviewed: xIH5CXh_pAg000WxumN6r1HqCNCxiK-kkP3YXH4QZMI

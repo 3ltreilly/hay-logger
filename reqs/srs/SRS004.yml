@@ -1,0 +1,9 @@
+header: Current total per hay type
+active: true
+type: requirement
+links:
+- UN002: qz9txO7hx2sIe789mnYxEqUrsnoF7-74emLEEPf-Rig
+text: 'The dashboard shows, for each hay type, the current total: the sum of all deposits
+  minus the sum of all withdrawals. Example: 100 bales delivered and 5 used shows
+  95.'
+reviewed: Hh7wfrxMrncmVKfq7IHPK7nHt4aZ0UUhyAVMO_s01UA

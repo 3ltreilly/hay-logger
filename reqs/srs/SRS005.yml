@@ -1,0 +1,11 @@
+header: Burn rates
+active: true
+type: requirement
+links:
+- UN003: sHWAPKPYw-kEBJRH7QrMJZwkAyuH_8j1MlxdQY5jweU
+text: 'For each hay type, the dashboard shows burn rates over 60, 180 and 365 days:
+  bales withdrawn in that many days up to and including the latest withdrawal, divided
+  by the number of days, rounded to 2 decimals. A hay type with no withdrawals shows
+  no burn rates. Example: 120 bales withdrawn in the 60 days up to the latest withdrawal
+  gives a 60-day rate of 2.0.'
+reviewed: MsQYQEeNOXio6d_BjrDP8a559Yl3Mj7ZsZOIXM_s8Io

@@ -1,0 +1,10 @@
+header: Withdraw estimate
+active: true
+type: requirement
+links:
+- UN006: kkKF25sELjjSTS0Y8eSw7gpgz9ehPanQF7ALhdMoZmY
+text: The dashboard will show how many bales the user can withdraw today without changing
+  the barn empty date.  It will use the 365 day burn rate. For example, if the burn
+  rate is 1 bale per day, today is june 11, the last withdrawal was june 1, the throw
+  down number should be 10.
+reviewed: hhZzih9o3Q8Rg2D-mhqFQIYjtip5KQlrTSRFEtTt1KI
