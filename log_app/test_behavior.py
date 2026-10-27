@@ -64,12 +64,14 @@ def index_total(client, name):
 # ---------------------------------------------------------------- totals
 
 
+@pytest.mark.requirement("SRS001", "SRS004")
 def test_adding_a_deposit_raises_total(client, barn):
     add_log(client, barn, "DEPOSIT", 20)
 
     assert index_total(client, "first") == 120
 
 
+@pytest.mark.requirement("SRS002")
 def test_editing_a_withdrawal_into_a_deposit(client, barn):
     log = add_log(client, barn, "WITHDRAW", 5)
     assert index_total(client, "first") == 95
@@ -89,6 +91,7 @@ def test_editing_a_withdrawal_into_a_deposit(client, barn):
     assert index_total(client, "first") == 105
 
 
+@pytest.mark.requirement("SRS002")
 def test_deleting_a_deposit_lowers_total(client, barn):
     log = add_log(client, barn, "DEPOSIT", 20)
 
@@ -100,6 +103,7 @@ def test_deleting_a_deposit_lowers_total(client, barn):
 # ---------------------------------------------------------------- dashboard numbers
 
 
+@pytest.mark.requirement("SRS004", "SRS005", "SRS006", "SRS010")
 def test_dashboard_burn_rates_and_empty_date(client, db):
     # 1000 delivered, 365 used in the last year (120 of them in the last 60 days): 635 left
     first_cutting = BaleCount.objects.create(name="first", total=635)
@@ -120,6 +124,7 @@ def test_dashboard_burn_rates_and_empty_date(client, db):
 # ---------------------------------------------------------------- chart
 
 
+@pytest.mark.requirement("SRS007")
 def test_chart_ends_at_the_dashboard_total(client, barn):
     second_cutting = BaleCount.objects.create(name="second", total=50)
     make_log(second_cutting, "DEPOSIT", 80, days_ago=300)
@@ -157,6 +162,7 @@ def test_pages_load(client, barn, url_name, needs_pk):
     assert response.status_code == 200
 
 
+@pytest.mark.requirement("SRS009")
 def test_csv_download_has_one_row_per_log(client, barn):
     make_log(barn, "WITHDRAW", 5)
 

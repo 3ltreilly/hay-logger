@@ -19,6 +19,7 @@ dev = [
     "ruff>=0.11.0,<0.12",
     "pytest-django>=4.14.0,<5",
     "pytest-cov>=7.1.0",
+    "jamb>=2.0.0",
 ]
 # only for up_load/up_load_script.py; install with `uv sync --group upload`
 upload = [
@@ -47,3 +48,7 @@ target-version = "py311"
 # McCabe complexity (`C901`) by default.
 select = ["E4", "E7", "E9", "F", "I"]
 ignore = []
+
+[tool.jamb]
+test_documents = ["SRS"]
+trace_to_ignore = ["PRJ"]

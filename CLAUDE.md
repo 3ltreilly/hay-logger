@@ -6,9 +6,11 @@ burn rates and a usage chart. One app, `log_app`. SQLite database at `db/db.sqli
 ## Commands
 
 ```bash
-uv sync                           # dependencies into .venv (dev group: pytest, pytest-django, ruff)
+uv sync                           # dependencies into .venv (dev group: pytest, pytest-django, ruff, jamb)
 uv run python manage.py runserver # local dev server
 uv run pytest                     # all tests (pytest-django; config in pyproject.toml)
+uv run pytest --jamb              # tests + requirements coverage summary (writes .jamb)
+uv run jamb validate              # requirements tree: broken links, suspect links, unreviewed
 uv run python manage.py makemigrations --check --dry-run   # models match migrations?
 uv run ruff check --fix . && uv run ruff format .          # also run by pre-commit
 uv add <pkg> / uv add --dev <pkg> # add a dependency (ask first); updates uv.lock
@@ -36,6 +38,36 @@ file on the Synology (`/volume1/docker/hay-logger/hay-logger.env`, passed with
 CI installs from a clean environment (`uv sync --locked`), so it is the real test of
 `uv.lock`. A local venv can hold packages the lock doesn't pin (e.g. an old `setuptools`) and
 hide breakage; `rm -rf .venv && uv sync` gives you the same clean install.
+
+## Requirements (jamb)
+
+Requirements live as YAML in `reqs/`, traced to tests with the `jamb` pytest plugin.
+Background and best practices: `requirements_chat.md`.
+
+- **Hierarchy:** `PRJ` (root, ignored in tracing) -> `UN` user needs -> `SRS` software
+  requirements. UN text is in the user's words and is approved by the user; SRS text says
+  what the system does ("the dashboard shows…"), with a worked example in numbers.
+- **Test markers go on SRS only** (`test_documents = ["SRS"]`):
+  `@pytest.mark.requirement("SRS004")`. Never mark tests with UN IDs; tests reach UN through
+  the SRS links. Only mark a test with a requirement it actually asserts; a page-loads smoke
+  test doesn't cover "shows a blank".
+- **Add items with the CLI** (`uv run jamb item add SRS --links UN003 --header … --text …`)
+  so links and files are written correctly. Quote multi-line `text:` carefully; one bad
+  YAML file makes `jamb validate` fail for the whole tree.
+- **Reviews are the owner's/user's approval:** `jamb review mark` (an item's own text is
+  approved) and `jamb review clear` (a child still fits its changed parent). Don't run
+  either unless asked. Editing an item clears its review and makes its children's links
+  suspect; that's intended.
+- **UIDs are permanent.** Don't renumber (`jamb reorder`, `item add --before/--after`):
+  approvals, emails and PRs quote them. Gaps are fine.
+- **Grouping:** for now one SRS folder. Use custom YAML keys (e.g. `area: dashboard`; not
+  part of the review hash) for cross-cutting views; split into per-area documents
+  (own folder and prefix, add to `test_documents`) only when a folder gets hard to scan.
+- **`jamb check` misses markers on `TestCase` methods** (reports SRS008 uncovered); trust
+  `pytest --jamb`.
+- Generated output (`.jamb`, `matrix.html`, `srs.html`, `all.html`) isn't source.
+- Known gaps: SRS003 (horse-count pre-fill) has no test; the "blank" cases in SRS005/006
+  are only smoke-tested.
 
 ## Gotchas
 
