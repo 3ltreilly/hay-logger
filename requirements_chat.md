@@ -579,6 +579,11 @@ into `LOG`, `DASH` and `HIST`; the
   workflow (after LOG003 has a test, or the build fails).
 - Save the matrix with each release.
 - Write a derived SRS item for the version footer; decide on the other unmarked tests.
+- Experiment with the `jamb_log` fixture: have a test record its steps
+  (`jamb_log.test_action(...)`, `expected_result(...)`, `actual_result(...)`, `note(...)`)
+  and see them in the test records matrix (`pytest --jamb --jamb-test-matrix=records.html`).
+  A good first candidate is `test_dashboard_burn_rates_and_empty_date` (DASH002–004). It
+  turns a test into a readable record of what was checked, which is evidence for goal 2.
 - Optionally: an `area:` attribute and matrix column, to practice grouping; try
   pytest-bdd on one feature.
 
