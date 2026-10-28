@@ -13,7 +13,7 @@ from .models import BaleCount, Log
 
 
 class UsageOverTimeViewTests(TestCase):
-    @pytest.mark.requirement("SRS008")
+    @pytest.mark.requirement("HIST002")
     def test_usage_over_time_can_be_filtered_by_date_range(self):
         first_bale = BaleCount.objects.create(name="first", total=100)
         BaleCount.objects.create(name="second", total=200)
@@ -54,7 +54,7 @@ class UsageOverTimeViewTests(TestCase):
         self.assertEqual(response.context["start_date"], "2024-01-15")
         self.assertEqual(response.context["end_date"], "2024-02-01")
 
-    @pytest.mark.requirement("SRS007", "SRS008")
+    @pytest.mark.requirement("HIST001", "HIST002")
     def test_end_date_shows_balance_on_that_date_not_today(self):
         # 100 delivered, 10 used, then 50 used after the end date: the barn now holds 40
         first_bale = BaleCount.objects.create(name="first", total=40)

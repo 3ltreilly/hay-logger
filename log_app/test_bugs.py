@@ -73,7 +73,7 @@ def test_new_log_default_date_is_timezone_aware():
     assert timezone.is_aware(log.date)
 
 
-@pytest.mark.requirement("SRS001", "SRS002")
+@pytest.mark.requirement("LOG001", "LOG002")
 def test_invalid_edit_shows_form_errors(client, first_cutting):
     """BUG: submitting a bad value on the edit page should redisplay the form
     with an error message, not crash.
@@ -113,7 +113,7 @@ def edit_log(client, log, **changes):
     return client.post(reverse("log-edit", args=[log.pk]), data)
 
 
-@pytest.mark.requirement("SRS001", "SRS004")
+@pytest.mark.requirement("LOG001", "DASH001")
 def test_adding_a_withdrawal_reduces_total(client, first_cutting):
     make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
     client.post(
@@ -130,7 +130,7 @@ def test_adding_a_withdrawal_reduces_total(client, first_cutting):
     assert first_cutting.current_total() == 93
 
 
-@pytest.mark.requirement("SRS002")
+@pytest.mark.requirement("LOG002")
 def test_editing_amount_adjusts_total(client, first_cutting):
     make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
     log = make_log(first_cutting, "WITHDRAW", 5)
@@ -140,7 +140,7 @@ def test_editing_amount_adjusts_total(client, first_cutting):
     assert first_cutting.current_total() == 92
 
 
-@pytest.mark.requirement("SRS002")
+@pytest.mark.requirement("LOG002")
 def test_editing_hay_type_moves_amount_between_types(client, first_cutting):
     second_cutting = BaleCount.objects.create(name="second", total=200)
     make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
@@ -153,7 +153,7 @@ def test_editing_hay_type_moves_amount_between_types(client, first_cutting):
     assert second_cutting.current_total() == 195
 
 
-@pytest.mark.requirement("SRS002")
+@pytest.mark.requirement("LOG002")
 def test_deleting_a_withdrawal_restores_total(client, first_cutting):
     make_log(first_cutting, "DEPOSIT", 100, days_ago=10)
     log = make_log(first_cutting, "WITHDRAW", 5)
