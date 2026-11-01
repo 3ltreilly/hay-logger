@@ -10,6 +10,7 @@ import csv
 import datetime
 import io
 import json
+import zoneinfo
 
 import pytest
 from django.urls import reverse
@@ -124,6 +125,95 @@ def test_add_form_horse_count_starts_empty_with_no_logs(client, db):
     response = client.get(reverse("log-add"))
 
     assert "horse_count" not in response.context["form"].initial
+
+
+NEW_YORK = zoneinfo.ZoneInfo("America/New_York")
+
+
+def date_input(response):
+    """The date field's <input> HTML, as the phone's browser receives it."""
+    return str(response.context["form"]["date"])
+
+
+def edit_form_data(log, date):
+    return {
+        "date": date,
+        "hay_type": log.hay_type.pk,
+        "direction": log.direction,
+        "amount": log.amount,
+        "horse_count": log.horse_count,
+        "notes": log.notes or "",
+    }
+
+
+@pytest.mark.requirement("LOG004")
+def test_add_form_date_is_a_date_and_time_picker(client, barn):
+    response = client.get(reverse("log-add"))
+
+    assert 'type="datetime-local"' in date_input(response)
+
+
+@pytest.mark.requirement("LOG004")
+def test_add_form_date_starts_at_current_time(client, barn):
+    # the minute may tick over during the request, so either side of it is fine
+    before = timezone.localtime().strftime("%Y-%m-%dT%H:%M")
+    response = client.get(reverse("log-add"))
+    after = timezone.localtime().strftime("%Y-%m-%dT%H:%M")
+
+    html = date_input(response)
+    assert f'value="{before}"' in html or f'value="{after}"' in html
+
+
+@pytest.mark.requirement("LOG004")
+def test_edit_form_date_starts_at_saved_date(client, barn):
+    log = make_log(barn, "WITHDRAW", 5)
+    log.date = datetime.datetime(2024, 3, 10, 8, 30, tzinfo=NEW_YORK)
+    log.save()
+
+    html = date_input(client.get(reverse("log-edit", args=[log.pk])))
+
+    assert 'type="datetime-local"' in html
+    assert 'value="2024-03-10T08:30"' in html
+
+
+@pytest.mark.requirement("LOG004")
+def test_saving_edit_form_unchanged_keeps_date(client, barn):
+    log = make_log(barn, "WITHDRAW", 5)
+    log.date = datetime.datetime(2024, 3, 10, 8, 30, tzinfo=NEW_YORK)
+    log.save()
+
+    client.post(reverse("log-edit", args=[log.pk]), edit_form_data(log, "2024-03-10T08:30"))
+
+    log.refresh_from_db()
+    # 10 March 2024 is the first day of daylight saving time: 08:30 EDT is 12:30 UTC
+    assert log.date == datetime.datetime(2024, 3, 10, 12, 30, tzinfo=datetime.UTC)
+
+
+@pytest.mark.requirement("LOG004")
+def test_add_form_rejects_empty_date(client, barn):
+    logs_before = Log.objects.count()
+
+    response = client.post(
+        reverse("log-add"),
+        {"date": "", "hay_type": barn.pk, "direction": "DEPOSIT", "amount": 5, "horse_count": 3},
+    )
+
+    assert Log.objects.count() == logs_before
+    assert response.context["form"].errors["date"]
+
+
+@pytest.mark.requirement("LOG004")
+def test_edit_form_date_drops_seconds(client, barn):
+    log = make_log(barn, "WITHDRAW", 5)
+    log.date = datetime.datetime(2024, 3, 10, 8, 30, 45, tzinfo=NEW_YORK)
+    log.save()
+
+    html = date_input(client.get(reverse("log-edit", args=[log.pk])))
+    assert 'value="2024-03-10T08:30"' in html
+
+    client.post(reverse("log-edit", args=[log.pk]), edit_form_data(log, "2024-03-10T08:30"))
+    log.refresh_from_db()
+    assert log.date.astimezone(NEW_YORK).time() == datetime.time(8, 30, 0)
 
 
 # ---------------------------------------------------------------- dashboard numbers

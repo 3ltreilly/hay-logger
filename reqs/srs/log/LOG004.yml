@@ -1,0 +1,12 @@
+header: Pick the date on a phone
+active: true
+type: requirement
+links:
+- UN001: ABK5b5VfDFPa8aTQ8WlJ8IIVVPrXu5RP4vLj25ya_r0
+text: 'On the Add and Edit forms the date is a date-and-time field, so a phone opens
+  its own date and time picker instead of a text box. The field shows local time (America/New_York)
+  to the minute. The Add form starts at the current time; the Edit form starts at
+  the log''s saved date. Example: a log saved at 2024-03-10 08:30 New York time opens
+  on the Edit form as 10 Mar 2024, 08:30, and saving without changes keeps that date.
+  Submitting the form with the date left empty is rejected with an error, as before.'
+reviewed: aoATkUafnm0z6YFvl4jI-NryBn4pfnaBhLaUJfaDSAE
