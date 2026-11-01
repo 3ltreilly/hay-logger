@@ -1,0 +1,13 @@
+header: Recent logs on the dashboard
+active: true
+type: requirement
+links:
+- UN001: ABK5b5VfDFPa8aTQ8WlJ8IIVVPrXu5RP4vLj25ya_r0
+- UN007: hLNvKs1NY3OCfDE9TCml1r7g8MyzgD2C4XaxPsJQcjI
+text: 'The dashboard lists the 10 logs with the latest dates, newest first, each with
+  its date, hay type and a signed amount: a deposit of 100 shows as +100 and a withdrawal
+  of 5 as -5. Tapping the date opens that log''s Edit form. Notes are not shown on
+  the dashboard. An All logs link opens a page that lists every log the same way,
+  newest first, with its notes. Example: with 25 logs the dashboard lists the 10 newest
+  and the All logs page lists all 25; with 4 logs both list all 4.'
+reviewed: WbF8r4V51A0sD0Sc5VtrI_C1CdXL2YMKafho0d9MerQ
