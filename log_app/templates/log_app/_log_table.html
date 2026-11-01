@@ -1,0 +1,23 @@
+<!-- Logs as given in `logs`. Set `show_notes` to add the notes column. -->
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Hay</th>
+            <th>Amount</th>
+            {% if show_notes %}<th>Notes</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td><a href="{{ log.get_absolute_url }}">{{ log.date.date }}</a></td>
+            <td>{{ log.hay_type }}</td>
+            <td>{% if log.direction == "DEPOSIT" %}+{% else %}-{% endif %}{{ log.amount }}</td>
+            {% if show_notes %}<td>{{ log.notes|default:"" }}</td>{% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">You have no logs!</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

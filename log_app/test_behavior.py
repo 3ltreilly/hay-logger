@@ -10,11 +10,14 @@ import csv
 import datetime
 import io
 import json
+import re
 import zoneinfo
 
 import pytest
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.formats import date_format
+from pytest_django.asserts import assertContains, assertNotContains
 
 from .models import BaleCount, Log
 
@@ -219,7 +222,7 @@ def test_edit_form_date_drops_seconds(client, barn):
 # ---------------------------------------------------------------- dashboard numbers
 
 
-@pytest.mark.requirement("DASH001", "DASH002", "DASH003", "DASH004")
+@pytest.mark.requirement("DASH001", "DASH003", "DASH004")
 def test_dashboard_burn_rates_and_empty_date(client, db):
     # 1000 delivered, 365 used in the last year (120 of them in the last 60 days): 635 left
     first_cutting = BaleCount.objects.create(name="first", total=635)
@@ -230,11 +233,181 @@ def test_dashboard_burn_rates_and_empty_date(client, db):
     row = index_row(client, "first")
 
     assert row["total"] == 635
-    assert row["sixty"] == 2.0  # 120 bales / 60 days
     assert row["one_year"] == 1.0  # 365 bales / 365 days
     # 635 bales at 1 bale a day, counted from the last withdrawal
     assert row["empty_date"] == (last_withdrawal.date + datetime.timedelta(days=635)).date()
     assert row["throw_down"] == 1  # 1 day since the last withdrawal at 1 bale a day
+
+
+# ---------------------------------------------------------------- phone layout
+
+
+@pytest.fixture
+def busy_barn(db):
+    """First cutting: 635 left, 1.0 bale/day over a year, 2.0 over 60 days, last used yesterday."""
+    first_cutting = BaleCount.objects.create(name="first", total=635)
+    make_log(first_cutting, "DEPOSIT", 1000, days_ago=400)
+    make_log(first_cutting, "WITHDRAW", 245, days_ago=200)
+    make_log(first_cutting, "WITHDRAW", 120, days_ago=1)
+    return first_cutting
+
+
+def row(label, *cells):
+    """One row of a hay table: the number's name, then one cell per hay type."""
+    cells_html = "".join(f"<td>{cell}</td>" for cell in cells)
+    return f'<tr><th scope="row">{label}</th>{cells_html}</tr>'
+
+
+def hay_table(response):
+    """The dashboard's hay table, as HTML."""
+    html = response.content.decode()
+    start = html.index('<table id="hay-table"')
+    return html[start : html.index("</table>", start)]
+
+
+def empty_date_text(days_from_last_withdrawal):
+    last_withdrawal = Log.objects.filter(direction="WITHDRAW").latest("date")
+    return date_format(
+        (last_withdrawal.date + datetime.timedelta(days_from_last_withdrawal)).date()
+    )
+
+
+@pytest.mark.requirement("DASH005")
+def test_dashboard_first_button_is_add(client, busy_barn):
+    html = client.get(reverse("index")).content.decode()
+
+    first_input = re.search(r"<input[^>]*>", html).group()
+    assert 'value="Add a new item"' in first_input
+    assert html.index(first_input) < html.index('<table id="hay-table"')
+
+
+@pytest.mark.requirement("DASH005")
+def test_dashboard_hay_table_shows_four_numbers(client, busy_barn):
+    response = client.get(reverse("index"))
+
+    assertContains(response, row("Total", 635), html=True)
+    assertContains(response, row("Bales/day (1 year)", "1.0"), html=True)
+    assertContains(response, row("Empty date", empty_date_text(635)), html=True)
+    assertContains(response, row("Throw down", 1), html=True)
+
+
+@pytest.mark.requirement("DASH005")
+def test_dashboard_leaves_out_60_and_180_day_rates(client, busy_barn):
+    response = client.get(reverse("index"))
+
+    table = hay_table(response)
+    labels = re.findall(r'<th scope="row">([^<]*)</th>', table)
+    assert labels == ["Total", "Bales/day (1 year)", "Empty date", "Throw down"]
+    assert "2.0" not in table  # the 60-day rate
+    assertContains(response, f'href="{reverse("hay-details")}"')
+
+
+@pytest.mark.requirement("DASH005")
+def test_dashboard_blanks_for_hay_type_with_no_withdrawals(client, barn):
+    response = client.get(reverse("index"))
+
+    assertContains(response, row("Total", 100), html=True)
+    assertContains(response, row("Bales/day (1 year)", ""), html=True)
+    assertContains(response, row("Empty date", ""), html=True)
+    assertContains(response, row("Throw down", ""), html=True)
+
+
+@pytest.mark.requirement("DASH006", "DASH002")
+def test_details_page_shows_every_number(client, busy_barn):
+    response = client.get(reverse("hay-details"))
+
+    assertContains(response, row("Total", 635), html=True)
+    assertContains(response, row("Bales/day (60 days)", "2.0"), html=True)  # 120 / 60
+    assertContains(response, row("Bales/day (180 days)", "0.67"), html=True)  # 120 / 180
+    assertContains(response, row("Bales/day (1 year)", "1.0"), html=True)  # 365 / 365
+    assertContains(response, row("Empty date", empty_date_text(635)), html=True)
+    assertContains(response, row("Throw down", 1), html=True)
+
+
+@pytest.mark.requirement("DASH006")
+def test_details_page_has_one_column_per_hay_type(client, busy_barn):
+    second_cutting = BaleCount.objects.create(name="second", total=50)
+    make_log(second_cutting, "DEPOSIT", 50, days_ago=300)
+
+    response = client.get(reverse("hay-details"))
+
+    assertContains(response, "<tr><th>Hay type</th><th>first</th><th>second</th></tr>", html=True)
+    assertContains(response, row("Total", 635, 50), html=True)
+
+
+def edit_links(response):
+    """Edit-form links on a page, in page order, as log ids."""
+    edit_urls = {reverse("log-edit", args=[log.pk]): log.pk for log in Log.objects.all()}
+    hrefs = re.findall(r'href="([^"]+)"', response.content.decode())
+    return [edit_urls[href] for href in hrefs if href in edit_urls]
+
+
+def newest_first(count=None):
+    return list(Log.objects.order_by("-date").values_list("pk", flat=True)[:count])
+
+
+@pytest.mark.requirement("LOG005")
+def test_dashboard_lists_ten_newest_logs(client, barn):
+    for days_ago in range(1, 25):  # 24 more logs: 25 in all
+        make_log(barn, "WITHDRAW", 1, days_ago=days_ago)
+
+    response = client.get(reverse("index"))
+
+    assert edit_links(response) == newest_first(10)
+
+
+@pytest.mark.requirement("LOG005")
+def test_all_logs_page_lists_every_log(client, barn):
+    for days_ago in range(1, 25):
+        make_log(barn, "WITHDRAW", 1, days_ago=days_ago)
+    Log.objects.filter(pk=newest_first(1)[0]).update(notes="wet bale")
+
+    response = client.get(reverse("log-view"))
+
+    assert edit_links(response) == newest_first()
+    assert len(edit_links(response)) == 25
+    assertContains(response, "wet bale")
+    assertContains(client.get(reverse("index")), f'href="{reverse("log-view")}"')
+
+
+@pytest.mark.requirement("LOG005")
+def test_dashboard_lists_all_of_a_few_logs(client, barn):
+    for days_ago in range(1, 4):  # 4 logs in all
+        make_log(barn, "WITHDRAW", 1, days_ago=days_ago)
+
+    response = client.get(reverse("index"))
+
+    assert edit_links(response) == newest_first()
+    assert len(edit_links(response)) == 4
+
+
+@pytest.mark.requirement("LOG005")
+def test_dashboard_shows_signed_amounts(client, barn):
+    withdrawal = make_log(barn, "WITHDRAW", 5)
+
+    response = client.get(reverse("index"))
+
+    assertContains(response, "<td>+100</td>", html=True)
+    assertContains(response, "<td>-5</td>", html=True)
+    assertContains(response, f'href="{withdrawal.get_absolute_url()}"')
+
+
+@pytest.mark.requirement("LOG005")
+def test_dashboard_hides_notes(client, barn):
+    Log.objects.update(notes="wet bale")
+
+    response = client.get(reverse("index"))
+
+    assertNotContains(response, "wet bale")
+
+
+@pytest.mark.requirement("HIST004")
+def test_chart_is_300_pixels_tall(client, barn):
+    response = client.get(reverse("usage-over-time"))
+
+    # Chart.js fills its parent's height only when it doesn't keep its own aspect ratio
+    assertContains(response, '<div style="position: relative; height: 300px">')
+    assertContains(response, "maintainAspectRatio: false")
 
 
 # ---------------------------------------------------------------- chart
@@ -268,6 +441,7 @@ def test_chart_ends_at_the_dashboard_total(client, barn):
         ("log-edit", True),
         ("item-delete", True),
         ("usage-over-time", False),
+        ("hay-details", False),
     ],
 )
 def test_pages_load(client, barn, url_name, needs_pk):

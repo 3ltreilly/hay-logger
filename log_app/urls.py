@@ -17,4 +17,5 @@ urlpatterns = [
         name="item-delete",
     ),
     path("usage/", views.UsageOverTimeView.as_view(), name="usage-over-time"),
+    path("hay/", views.HayDetailsView.as_view(), name="hay-details"),
 ]

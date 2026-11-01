@@ -28,40 +28,55 @@ def burn_rate(hay_type, days):
     return round(bale_count / days, 2)
 
 
+def hay_summary():
+    """One dict per hay type: total, burn rates, empty date and throw down."""
+    summary = [
+        {"id": bale.id, "name": bale.name, "total": bale.current_total()}
+        for bale in BaleCount.objects.all()
+    ]
+    for hay_type in summary:
+        # get date of last log for empty date math
+        try:
+            last_log = (
+                Log.objects.filter(hay_type__exact=hay_type["id"])
+                .filter(direction__exact="WITHDRAW")
+                .latest("date")
+            )
+        except Log.DoesNotExist:
+            continue
+        hay_type["sixty"] = burn_rate(hay_type["id"], 60)
+        hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
+        hay_type["one_year"] = burn_rate(hay_type["id"], 365)
+        # too little usage to predict when the barn empties; the template shows a blank
+        if hay_type["one_year"]:
+            hay_type["empty_date"] = (
+                datetime.timedelta(hay_type["total"] / hay_type["one_year"]) + last_log.date
+            ).date()
+        hay_type["throw_down"] = round(
+            (datetime.datetime.now(pytz.utc) - last_log.date).days * hay_type["one_year"]
+        )
+    return summary
+
+
 class ListListView(ListView):
-    model = Log
     template_name = "log_app/index.html"
+    # the dashboard shows only the newest logs; the All logs page (LogView) shows the rest
+    queryset = Log.objects.order_by("-date")[:10]
 
     # redefine this method to add in the BaleCount object
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        # one row per hay type for the summary table
-        context["bale_count"] = [
-            {"id": bale.id, "name": bale.name, "total": bale.current_total()}
-            for bale in BaleCount.objects.all()
-        ]
-        for hay_type in context["bale_count"]:
-            # get date of last log for empty date math
-            try:
-                last_log = (
-                    Log.objects.filter(hay_type__exact=hay_type["id"])
-                    .filter(direction__exact="WITHDRAW")
-                    .latest("date")
-                )
-            except Log.DoesNotExist:
-                continue
-            hay_type["sixty"] = burn_rate(hay_type["id"], 60)
-            hay_type["one_eight"] = burn_rate(hay_type["id"], 180)
-            hay_type["one_year"] = burn_rate(hay_type["id"], 365)
-            # too little usage to predict when the barn empties; the template shows a blank
-            if hay_type["one_year"]:
-                hay_type["empty_date"] = (
-                    datetime.timedelta(hay_type["total"] / hay_type["one_year"]) + last_log.date
-                ).date()
-            hay_type["throw_down"] = round(
-                (datetime.datetime.now(pytz.utc) - last_log.date).days * hay_type["one_year"]
-            )
+        context["bale_count"] = hay_summary()
+        return context
+
+
+class HayDetailsView(TemplateView):
+    template_name = "log_app/hay_details.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["bale_count"] = hay_summary()
         return context
 
 
@@ -179,6 +194,7 @@ class LogEdit(UpdateView):
 
 class LogView(ListView):
     model = Log
+    ordering = ["-date"]
 
 
 class LogDelete(DeleteView):

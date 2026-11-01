@@ -12,9 +12,15 @@
         value="View Usage Chart"
         type="button"
         onclick="location.href='{% url "usage-over-time" %}'"
-        style="margin-left: 1rem;"
     />
 </p>
+<h3>Hay Types</h3>
+{% include "log_app/_hay_table.html" %}
+<p><a href="{% url "hay-details" %}">Details</a></p>
+
+<h3>Recent logs</h3>
+{% include "log_app/_log_table.html" with logs=object_list %}
+<p><a href="{% url "log-view" %}">All logs</a></p>
 <p>
     <input
         value="Download CSV"
@@ -22,68 +28,4 @@
         onclick="location.href='{% url "download-csv" %}'"
     />
 </p>
-<h3>
-    Hay Types
-</h3>
-<table class="table-auto mx-auto w-full mt-8">
-    <thead class="bg-gray-800 text-white">
-        <tr class="uppercase font-semibold text-sm">
-            <th class="px-4 py-2">Hay Type</th>
-            <th class="px-4 py-2">Total</th>
-            <th class="px-4 py-2">60 day bale/day</th>
-            <!-- <th class="px-4 py-2">180 day burn rate</th> -->
-            <th class="px-4 py-2">1 year bale/day</th>
-            <th class="px-4 py-2">Empty Barn Date</th>
-            <th class="px-4 py-2">Throw down</th>
-
-        </tr>
-        </thead>
-        <tbody>
-    {% for bale in bale_count %}
-    <tr class="{% cycle 'bg-gray-300' 'bg-white-100' %}">
-        <td class="border px-4 py-2 text-center">{{ bale.name }}</td>
-        <td class="border px-4 py-2 text-center">{{ bale.total }}</td>
-        <td class="border px-4 py-2 text-center">{{ bale.sixty }}</td>
-        <!-- <td class="border px-4 py-2 text-center">{{ bale.one_eight }}</td> -->
-        <td class="border px-4 py-2 text-center">{{ bale.one_year }}</td>
-        <td class="border px-4 py-2 text-center">{{ bale.empty_date }}</td>
-        <td class="border px-4 py-2 text-center">{{ bale.throw_down }}</td>
-
-    </tr>
-    </tbody>
-    {% empty %}
-    <h4>You have no logs!</h4>
-    {% endfor %}
-</table>
-
-{% if object_list %}
-<h3>Hay logs</h3>
-{% endif %}
-<table class="table-auto mx-auto w-full mt-8">
-    <thead class="bg-gray-800 text-white">
-        <tr class="uppercase font-semibold text-sm">
-            <th class="px-4 py-2">Date</th>
-            <th class="px-4 py-2">Amount</th>
-            <th class="px-4 py-2">Hay Type</th>
-            <th class="px-4 py-2">Transaction Type</th>
-            <!-- <th class="px-4 py-2">Horse Count</th> -->
-            <th class="px-4 py-2">Notes</th>
-        </tr>
-        </thead>
-        <tbody>
-    {% for loglist in object_list reversed%}
-    <tr class="{% cycle 'bg-gray-300' 'bg-white-100' %}">
-        <td class="border px-4 py-2 text-center"><a href="{{loglist.get_absolute_url}}">{{ loglist.date.date }}</a></td>
-        <td class="border px-4 py-2 text-center">{{ loglist.amount }}</td>
-        <td class="border px-4 py-2 text-center">{{ loglist.hay_type }}</td>
-        <td class="border px-4 py-2 text-center">{{ loglist.direction }}</td>
-        <!-- <td class="border px-4 py-2 text-center">{{ loglist.horse_count }}</td> -->
-        <td class="border px-4 py-2 text-center">{{ loglist.notes }}</td>
-    </tr>
-    </tbody>
-    {% empty %}
-    <h4>You have no logs!</h4>
-    {% endfor %}
-</table>
-
 {% endblock %}

@@ -1,16 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h1>log List</h1>
-  {% if log_list %}
-  <ul>
-    {% for log in log_list %}
-      <li>
-        <a href="{{ log.get_absolute_url }}">{{ log.id }}</a> {{log.amount}}
-      </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-    <p>There are no logs in the database.</p>
-  {% endif %} 
+<h2>All logs</h2>
+<p>
+    <input value="Back to Dashboard" type="button" onclick="location.href='{% url "index" %}'" />
+</p>
+{% include "log_app/_log_table.html" with logs=log_list show_notes=True %}
 {% endblock %}

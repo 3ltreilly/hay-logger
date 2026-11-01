@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Hay details</h2>
+<p>
+    <input value="Back to Dashboard" type="button" onclick="location.href='{% url "index" %}'" />
+</p>
+{% include "log_app/_hay_table.html" with details=True %}
+{% endblock %}
