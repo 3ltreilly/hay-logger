@@ -19,6 +19,8 @@ The sections below explain the reasons. These are the rules to follow day to day
 
 ### Changing behavior
 
+- Change behavior requirements-first: approved requirements, then failing tests, then code
+  (section 12; the `/req-feature` skill runs the steps).
 - A behavior change updates its SRS item in the same commit or PR; list the changed UIDs.
 - Never edit a requirement just to make a test pass. Flag the mismatch.
 - Behavior nobody asked for still gets an SRS item (`derived: true`).
@@ -574,15 +576,117 @@ Quirks found so far:
   `review clear` is run. Expected, not an error.
 - `.jamb`, `matrix.html`, `srs.html` and `all.html` are generated output.
 
-## 12. Next steps
+## 12. Requirements-first workflow with agents (the `req-feature` skill)
+
+Goal 3 asks for requirements that stay a current description of the code. The most
+reliable way to get that with an agent writing the code is to make the requirements come
+*first*: you say what you want, the agent drafts requirements, you approve them, and only
+then are tests and code written.
+
+### The flow
+
+```text
+ You: "I want X"
+   │
+   ▼
+ ① Check existing requirements and tests (new need? change? bug?)
+   ▼
+ ② Draft the user need (UN), or edit the existing one
+   ▼  ── GATE 1: you run `jamb review mark` on the UN ──
+ ③ Draft SRS items + an examples table (one row per test case)
+   ▼  ── GATE 2: you run `review mark` and `review clear` on the SRS items ──
+ ④ Write tests from the examples; see them FAIL
+   ▼
+ ⑤ Write code until they pass; `jamb validate -e` and the full suite pass
+   ▼
+ ⑥ You review the diff, requirements diff first
+```
+
+Four details make it work:
+
+- **Check what exists first.** Most requests change existing behavior. Editing the existing
+  item (and letting jamb mark its children suspect) beats adding a duplicate that silently
+  contradicts it. This step also answers "what will this change affect?" before any code.
+- **The examples are the contract.** At gate 2 you approve a table of concrete cases
+  (given / when / then, with numbers, edge cases and a "doesn't do" row). Each row becomes
+  a test. Vague wording gets caught here, before code exists.
+- **Tests first, seen failing.** Tests written from approved examples test the
+  requirement; tests written after the code tend to describe whatever the code does. A
+  test you've seen fail is one that can catch a bug.
+- **The agent checks the gates; it can't pass them.** It never runs `review mark` or
+  `review clear` (blocked in `.claude/settings.json`), but it reads approval state with
+  `jamb validate` before moving on. "Looks good" in chat isn't the record; the review mark
+  is.
+
+### Scale it to the change
+
+| Request | Process |
+|---|---|
+| New need | The full flow |
+| New behavior for an existing need (only *how* it's met changes) | Skip ② and gate 1; add SRS items under the existing UN |
+| Change to existing behavior | Start at ①: edit the existing UN/SRS item; suspect links force the re-check |
+| Bug fix (code doesn't match an approved SRS item) | No gates: a failing test for that item, then the fix |
+| Refactor | Not this process. The check is: requirements unchanged, all tests still pass |
+
+Running every change through the full flow leads to rubber-stamp approvals.
+
+### Alternatives considered
+
+- **Claude Code plan mode:** the agent proposes a plan and waits. A lighter gate, but the
+  plan isn't kept, so it serves goal 1, not goals 2–3. Useful inside step ⑤ for big code
+  changes.
+- **pytest-bdd:** the examples table is basically Gherkin; with pytest-bdd the approved
+  scenarios *are* the tests. Worth trying once this flow feels natural.
+- **Tests-only TDD:** faster, but no user-readable layer and no record.
+
+### The skill
+
+The flow is packaged as a Claude Code skill, `req-feature`, at
+`~/.claude/skills/req-feature/SKILL.md` (your user folder, so it works in every project;
+it isn't in this repo). Invoke it with `/req-feature <what you want>`, or just ask for a
+behavior change in a repo that uses jamb.
+
+It's written to be project-neutral: at the start it reads the project's `CLAUDE.md`,
+`[tool.jamb]` settings and `jamb info`, so it uses each project's own document names and
+rules. To use it in another project, that project needs:
+
+- jamb set up (`reqs/`, `[tool.jamb]` with `test_documents`),
+- a `CLAUDE.md` that describes the hierarchy and writing rules (the skill follows it), and
+- ideally the same `.claude/settings.json` deny rules, so agents can't run
+  `jamb review` or `jamb reorder`.
+
+### First trial (2026-11-01)
+
+Request: "the date field should use the phone's date picker instead of typing text" (from
+the iPhone review). Run in a fresh session, so only the skill and `CLAUDE.md` guided it.
+
+- It linked the change to the existing UN001 ("record hay… from my phone at the barn") and
+  added **LOG004** instead of inventing a new need.
+- LOG004 is precise: both forms, local time to the minute, where each form's value comes
+  from, a worked round-trip example, and the empty-date edge case.
+- Six tests marked LOG004, checking the HTML the phone receives; then a shared `LogForm`
+  (a ModelForm with a `datetime-local` widget) replaced the duplicated `fields` lists in
+  the Add and Edit views.
+- Result: `jamb validate -e` clean, 31 tests passing, 11 of 11 SRS items covered. No issues
+  seen.
+
+One refinement came out of it: the skill's list of request kinds didn't include "new
+behavior for an existing need" (skip gate 1). That case is now in the skill and in the
+table above.
+
+## 13. Next steps
 
 Done: current items reviewed and approved; generated jamb output kept out of git; SRS split
 into `LOG`, `DASH` and `HIST`; the
 "behavior changes update requirements in the same change" rule added to `CLAUDE.md`;
-LOG003 tested, so every SRS item now has a test.
+LOG003 tested and reworded, so every SRS item has a test; the `req-feature` skill written,
+tried (LOG004) and moved to `~/.claude/skills/`.
 
 - Add the blank-case assertions for DASH002/003.
-- Consider rewording LOG003 to "…from the log with the latest date" (section 8).
+- Try `/req-feature` on a new need (the full flow with both gates), e.g. "show how many
+  weeks until the barn is empty"; then in another project.
+- After a few uses, tune the skill's description so it triggers reliably (skill-creator's
+  description optimizer).
 - Add `jamb validate -e` and `pytest --jamb --jamb-fail-uncovered` to the GitHub Actions
   workflow (coverage is now 100%, so `--jamb-fail-uncovered` passes).
 - Save the matrix with each release.

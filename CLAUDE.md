@@ -43,6 +43,9 @@ hide breakage; `rm -rf .venv && uv sync` gives you the same clean install.
 
 Requirements live as YAML in `reqs/`, traced to tests with the `jamb` pytest plugin.
 Background and best practices: `requirements_chat.md`.
+Behavior changes go requirements-first (approved requirements, then failing tests, then
+code) via the owner's `/req-feature` skill (`~/.claude/skills/`, not in this repo); see
+section 12 of `requirements_chat.md` if it isn't installed.
 
 - **Hierarchy:** `PRJ` (root, ignored in tracing) -> `UN` user needs -> SRS (software
   requirements), split by feature area into documents under `reqs/srs/`: `LOG` (adding,
@@ -76,8 +79,8 @@ Background and best practices: `requirements_chat.md`.
 - **`jamb check` misses markers on `TestCase` methods** (reports HIST002 uncovered); trust
   `pytest --jamb`.
 - Generated output (`.jamb`, `matrix.html`, `srs.html`, `all.html`) isn't source.
-- Every SRS item has a test (10 of 10). Known gap: the "blank" cases in DASH002/003 are
-  only smoke-tested.
+- Every SRS item has a test (`pytest --jamb` shows the coverage). Known gap: the "blank"
+  cases in DASH002/003 are only smoke-tested.
 
 ### Commands agents must not run
 
