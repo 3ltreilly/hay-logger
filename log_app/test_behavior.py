@@ -100,6 +100,32 @@ def test_deleting_a_deposit_lowers_total(client, barn):
     assert index_total(client, "first") == 100
 
 
+# ---------------------------------------------------------------- add form
+
+
+@pytest.mark.requirement("LOG003")
+def test_add_form_prefills_horse_count_from_latest_log(client, barn):
+    # barn's delivery (400 days ago) had 3 horses; a newer log says there are 5 now
+    Log.objects.create(
+        date=timezone.now() - datetime.timedelta(days=1),
+        hay_type=barn,
+        direction="WITHDRAW",
+        amount=10,
+        horse_count=5,
+    )
+
+    response = client.get(reverse("log-add"))
+
+    assert response.context["form"].initial["horse_count"] == 5
+
+
+@pytest.mark.requirement("LOG003")
+def test_add_form_horse_count_starts_empty_with_no_logs(client, db):
+    response = client.get(reverse("log-add"))
+
+    assert "horse_count" not in response.context["form"].initial
+
+
 # ---------------------------------------------------------------- dashboard numbers
 
 
