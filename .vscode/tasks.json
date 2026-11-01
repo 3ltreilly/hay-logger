@@ -9,6 +9,18 @@
             "command": "${command:python.interpreterPath} manage.py makemigrations"
         },
         {
+            // run after a merged PR's Actions run has pushed the new image
+            "label": "Deploy to milhouse",
+            "type": "shell",
+            "command": "${workspaceFolder}/deploy.sh",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated"
+            }
+        },
+        {
             "type": "docker-build",
             "label": "docker-build",
             "platform": "python",
