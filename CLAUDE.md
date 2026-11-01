@@ -76,8 +76,8 @@ Background and best practices: `requirements_chat.md`.
 - **`jamb check` misses markers on `TestCase` methods** (reports HIST002 uncovered); trust
   `pytest --jamb`.
 - Generated output (`.jamb`, `matrix.html`, `srs.html`, `all.html`) isn't source.
-- Known gaps: LOG003 (horse-count pre-fill) has no test; the "blank" cases in DASH002/003
-  are only smoke-tested.
+- Every SRS item has a test (10 of 10). Known gap: the "blank" cases in DASH002/003 are
+  only smoke-tested.
 
 ### Commands agents must not run
 

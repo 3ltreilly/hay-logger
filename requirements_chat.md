@@ -288,11 +288,17 @@ Who runs what:
   and one requirement can have several tests.
 - Tests with no matching requirement (version footer, migration test) stay unmarked.
 
-Coverage as of 2026-10-26: 9 of 10 SRS items covered, all passing. Known gaps:
-- **LOG003 (horse-count pre-fill) has no test.**
+Coverage as of 2026-11-01: 10 of 10 SRS items covered, all passing. LOG003 (horse-count
+pre-fill) was the last gap; it got two tests in `test_behavior.py`, one per claim in its
+text (pre-fills from the latest log; starts empty with no logs). Remaining gap:
 - **The "blank" cases in DASH002/003** are only smoke-tested (the `test_index_loads_*`
   tests in `test_bugs.py`). One assertion each on the dashboard row would let them be
   marked properly.
+
+Writing the LOG003 tests turned up an ambiguity: "the most recent log" could mean the
+newest date or the latest entered. The code uses the newest *date* (`latest("date")`), so
+back-filling an old log doesn't change the pre-fill. Writing a test is a good way to find
+vague requirement wording.
 
 ## 9. Keeping developers informed (working with AI agents)
 
@@ -572,11 +578,13 @@ Quirks found so far:
 
 Done: current items reviewed and approved; generated jamb output kept out of git; SRS split
 into `LOG`, `DASH` and `HIST`; the
-"behavior changes update requirements in the same change" rule added to `CLAUDE.md`.
+"behavior changes update requirements in the same change" rule added to `CLAUDE.md`;
+LOG003 tested, so every SRS item now has a test.
 
-- Write a test for LOG003; add the blank-case assertions for DASH002/003.
+- Add the blank-case assertions for DASH002/003.
+- Consider rewording LOG003 to "…from the log with the latest date" (section 8).
 - Add `jamb validate -e` and `pytest --jamb --jamb-fail-uncovered` to the GitHub Actions
-  workflow (after LOG003 has a test, or the build fails).
+  workflow (coverage is now 100%, so `--jamb-fail-uncovered` passes).
 - Save the matrix with each release.
 - Write a derived SRS item for the version footer; decide on the other unmarked tests.
 - Experiment with the `jamb_log` fixture: have a test record its steps

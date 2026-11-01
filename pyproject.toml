@@ -52,3 +52,8 @@ ignore = []
 [tool.jamb]
 test_documents = ["LOG", "DASH", "HIST"]
 trace_to_ignore = ["PRJ"]
+
+[tool.coverage.run]
+source = ["log_app", "hay_logger"]
+omit = ["*/migrations/*", "*/test_*.py", "*/tests.py", "*/asgi.py", "*/wsgi.py"]
+branch = true
