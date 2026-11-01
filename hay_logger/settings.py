@@ -36,6 +36,7 @@ if not DEBUG and SECRET_KEY.startswith("django-insecure"):
     raise ImproperlyConfigured("DEBUG is off: set DJANGO_SECRET_KEY to a real secret key")
 
 ALLOWED_HOSTS = [
+    "0.0.0.0",
     "192.168.7.226",
     "192.168.7.253",
     "localhost",

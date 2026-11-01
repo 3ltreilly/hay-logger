@@ -1,0 +1,38 @@
+<!-- One column per hay type, one row per number, so it fits a phone screen.
+     Set `details` to also show the 60- and 180-day burn rates. -->
+<table id="hay-table">
+    <thead>
+        <tr>
+            <th>Hay type</th>
+            {% for bale in bale_count %}<th>{{ bale.name }}</th>{% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th scope="row">Total</th>
+            {% for bale in bale_count %}<td>{{ bale.total }}</td>{% endfor %}
+        </tr>
+        {% if details %}
+        <tr>
+            <th scope="row">Bales/day (60 days)</th>
+            {% for bale in bale_count %}<td>{{ bale.sixty }}</td>{% endfor %}
+        </tr>
+        <tr>
+            <th scope="row">Bales/day (180 days)</th>
+            {% for bale in bale_count %}<td>{{ bale.one_eight }}</td>{% endfor %}
+        </tr>
+        {% endif %}
+        <tr>
+            <th scope="row">Bales/day (1 year)</th>
+            {% for bale in bale_count %}<td>{{ bale.one_year }}</td>{% endfor %}
+        </tr>
+        <tr>
+            <th scope="row">Empty date</th>
+            {% for bale in bale_count %}<td>{{ bale.empty_date }}</td>{% endfor %}
+        </tr>
+        <tr>
+            <th scope="row">Throw down</th>
+            {% for bale in bale_count %}<td>{{ bale.throw_down }}</td>{% endfor %}
+        </tr>
+    </tbody>
+</table>

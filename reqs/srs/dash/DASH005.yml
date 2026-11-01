@@ -1,0 +1,14 @@
+header: Dashboard on a phone
+active: true
+type: requirement
+links:
+- UN003: sHWAPKPYw-kEBJRH7QrMJZwkAyuH_8j1MlxdQY5jweU
+- UN007: hLNvKs1NY3OCfDE9TCml1r7g8MyzgD2C4XaxPsJQcjI
+text: 'The dashboard''s first button is Add a new item. Below it, the hay table has
+  one column per hay type and four rows: Total, Bales/day (1 year), Empty date and
+  Throw down. The dashboard does not show the 60- or 180-day burn rates; a Details
+  link opens the hay details page (DASH006). A hay type with no withdrawals shows
+  blanks in the last three rows. Example: first cutting with 635 bales, a 1-year rate
+  of 1.0 and its last withdrawal yesterday shows 635, 1.0, the date 635 days after
+  that withdrawal, and 1.'
+reviewed: O1b7-UcMB5yQYpYarOTUyCftvtHR19asRUzKukEEChI

@@ -1,0 +1,9 @@
+header: Chart size on a phone
+active: true
+type: requirement
+links:
+- UN007: hLNvKs1NY3OCfDE9TCml1r7g8MyzgD2C4XaxPsJQcjI
+text: 'The usage chart is as wide as the page and 300 pixels tall at any screen width,
+  instead of keeping a 2:1 shape that shrinks on a phone. Example: on a page 350 pixels
+  wide the chart is 350 by 300 pixels, not 350 by 175.'
+reviewed: mqzg2A7BazwdWHFRNA4zU8KNAjPc-pWcLx3KAgp_Fyk
