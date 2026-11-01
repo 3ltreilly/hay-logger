@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(uv run jamb review *)",
+      "Bash(jamb review *)",
+      "Bash(.venv/bin/jamb review *)",
+      "Bash(uv run python -m jamb review *)",
+      "Bash(uv run jamb reorder *)",
+      "Bash(jamb reorder *)",
+      "Bash(.venv/bin/jamb reorder *)",
+      "Bash(uv run python -m jamb reorder *)"
+    ]
+  }
+}

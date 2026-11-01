@@ -1,0 +1,9 @@
+header: CSV download
+active: true
+type: requirement
+links:
+- UN005: e35Su4HnhVxrLCOjhFTp9oeWNf8juMxU8KtaIP8Iu0g
+text: 'The user can download every log as a CSV file, one row per log in date order,
+  with the columns: id, date, amount, hay_type, direction, horse_count, balance_after_transaction,
+  notes.'
+reviewed: DWQZ8wE0ceO2D3KBvpkmdvELr15dd-4IWhcy5c-JJ5o

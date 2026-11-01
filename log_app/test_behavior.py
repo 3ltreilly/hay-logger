@@ -10,6 +10,7 @@ import csv
 import datetime
 import io
 import json
+import zoneinfo
 
 import pytest
 from django.urls import reverse
@@ -64,12 +65,14 @@ def index_total(client, name):
 # ---------------------------------------------------------------- totals
 
 
+@pytest.mark.requirement("LOG001", "DASH001")
 def test_adding_a_deposit_raises_total(client, barn):
     add_log(client, barn, "DEPOSIT", 20)
 
     assert index_total(client, "first") == 120
 
 
+@pytest.mark.requirement("LOG002")
 def test_editing_a_withdrawal_into_a_deposit(client, barn):
     log = add_log(client, barn, "WITHDRAW", 5)
     assert index_total(client, "first") == 95
@@ -89,6 +92,7 @@ def test_editing_a_withdrawal_into_a_deposit(client, barn):
     assert index_total(client, "first") == 105
 
 
+@pytest.mark.requirement("LOG002")
 def test_deleting_a_deposit_lowers_total(client, barn):
     log = add_log(client, barn, "DEPOSIT", 20)
 
@@ -97,9 +101,125 @@ def test_deleting_a_deposit_lowers_total(client, barn):
     assert index_total(client, "first") == 100
 
 
+# ---------------------------------------------------------------- add form
+
+
+@pytest.mark.requirement("LOG003")
+def test_add_form_prefills_horse_count_from_latest_log(client, barn):
+    # barn's delivery (400 days ago) had 3 horses; a newer log says there are 5 now
+    Log.objects.create(
+        date=timezone.now() - datetime.timedelta(days=1),
+        hay_type=barn,
+        direction="WITHDRAW",
+        amount=10,
+        horse_count=5,
+    )
+
+    response = client.get(reverse("log-add"))
+
+    assert response.context["form"].initial["horse_count"] == 5
+
+
+@pytest.mark.requirement("LOG003")
+def test_add_form_horse_count_starts_empty_with_no_logs(client, db):
+    response = client.get(reverse("log-add"))
+
+    assert "horse_count" not in response.context["form"].initial
+
+
+NEW_YORK = zoneinfo.ZoneInfo("America/New_York")
+
+
+def date_input(response):
+    """The date field's <input> HTML, as the phone's browser receives it."""
+    return str(response.context["form"]["date"])
+
+
+def edit_form_data(log, date):
+    return {
+        "date": date,
+        "hay_type": log.hay_type.pk,
+        "direction": log.direction,
+        "amount": log.amount,
+        "horse_count": log.horse_count,
+        "notes": log.notes or "",
+    }
+
+
+@pytest.mark.requirement("LOG004")
+def test_add_form_date_is_a_date_and_time_picker(client, barn):
+    response = client.get(reverse("log-add"))
+
+    assert 'type="datetime-local"' in date_input(response)
+
+
+@pytest.mark.requirement("LOG004")
+def test_add_form_date_starts_at_current_time(client, barn):
+    # the minute may tick over during the request, so either side of it is fine
+    before = timezone.localtime().strftime("%Y-%m-%dT%H:%M")
+    response = client.get(reverse("log-add"))
+    after = timezone.localtime().strftime("%Y-%m-%dT%H:%M")
+
+    html = date_input(response)
+    assert f'value="{before}"' in html or f'value="{after}"' in html
+
+
+@pytest.mark.requirement("LOG004")
+def test_edit_form_date_starts_at_saved_date(client, barn):
+    log = make_log(barn, "WITHDRAW", 5)
+    log.date = datetime.datetime(2024, 3, 10, 8, 30, tzinfo=NEW_YORK)
+    log.save()
+
+    html = date_input(client.get(reverse("log-edit", args=[log.pk])))
+
+    assert 'type="datetime-local"' in html
+    assert 'value="2024-03-10T08:30"' in html
+
+
+@pytest.mark.requirement("LOG004")
+def test_saving_edit_form_unchanged_keeps_date(client, barn):
+    log = make_log(barn, "WITHDRAW", 5)
+    log.date = datetime.datetime(2024, 3, 10, 8, 30, tzinfo=NEW_YORK)
+    log.save()
+
+    client.post(reverse("log-edit", args=[log.pk]), edit_form_data(log, "2024-03-10T08:30"))
+
+    log.refresh_from_db()
+    # 10 March 2024 is the first day of daylight saving time: 08:30 EDT is 12:30 UTC
+    assert log.date == datetime.datetime(2024, 3, 10, 12, 30, tzinfo=datetime.UTC)
+
+
+@pytest.mark.requirement("LOG004")
+def test_add_form_rejects_empty_date(client, barn):
+    logs_before = Log.objects.count()
+
+    response = client.post(
+        reverse("log-add"),
+        {"date": "", "hay_type": barn.pk, "direction": "DEPOSIT", "amount": 5, "horse_count": 3},
+    )
+
+    assert Log.objects.count() == logs_before
+    assert response.context["form"].errors["date"]
+
+
+@pytest.mark.requirement("LOG004")
+def test_edit_form_date_drops_seconds(client, barn):
+    log = make_log(barn, "WITHDRAW", 5)
+    log.date = datetime.datetime(2024, 3, 10, 8, 30, 45, tzinfo=NEW_YORK)
+    log.save()
+
+    html = date_input(client.get(reverse("log-edit", args=[log.pk])))
+    assert 'value="2024-03-10T08:30"' in html
+
+    client.post(reverse("log-edit", args=[log.pk]), edit_form_data(log, "2024-03-10T08:30"))
+    log.refresh_from_db()
+    assert log.date.astimezone(NEW_YORK).time() == datetime.time(8, 30, 0)
+
+
 # ---------------------------------------------------------------- dashboard numbers
 
 
+@pytest.mark.requirement("DASH001", "DASH002", "DASH003", "DASH004")
 def test_dashboard_burn_rates_and_empty_date(client, db):
     # 1000 delivered, 365 used in the last year (120 of them in the last 60 days): 635 left
     first_cutting = BaleCount.objects.create(name="first", total=635)
@@ -120,6 +240,7 @@ def test_dashboard_burn_rates_and_empty_date(client, db):
 # ---------------------------------------------------------------- chart
 
 
+@pytest.mark.requirement("HIST001")
 def test_chart_ends_at_the_dashboard_total(client, barn):
     second_cutting = BaleCount.objects.create(name="second", total=50)
     make_log(second_cutting, "DEPOSIT", 80, days_ago=300)
@@ -157,6 +278,7 @@ def test_pages_load(client, barn, url_name, needs_pk):
     assert response.status_code == 200
 
 
+@pytest.mark.requirement("HIST003")
 def test_csv_download_has_one_row_per_log(client, barn):
     make_log(barn, "WITHDRAW", 5)
 

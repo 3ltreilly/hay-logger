@@ -1,0 +1,10 @@
+header: Empty date
+active: true
+type: requirement
+links:
+- UN003: sHWAPKPYw-kEBJRH7QrMJZwkAyuH_8j1MlxdQY5jweU
+text: 'For each hay type, the dashboard shows an estimated empty date: the date of
+  the latest withdrawal plus (current total / 365-day burn rate) days. When the 365-day
+  rate is 0, the empty date is blank. Example: 635 bales at 1.0 bale/day gives a date
+  635 days after the latest withdrawal.'
+reviewed: 1bIv36GE3x8tRv6keJR_icFtjpLbfqUWOTboXK1PFlI

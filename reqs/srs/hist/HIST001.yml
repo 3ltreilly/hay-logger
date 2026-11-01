@@ -1,0 +1,8 @@
+header: Running total chart
+active: true
+type: requirement
+links:
+- UN004: F_-tWw-dEb7xm8cBxP6OGgcA1THg9m2b5XDWfUs9DNk
+text: The usage page charts the running total of each hay type for each local calendar
+  day that has a log, using every log in the database.
+reviewed: Mc79ptUDmHzohep-VyJamGfhgt25gHW3hu4nywYDAgI

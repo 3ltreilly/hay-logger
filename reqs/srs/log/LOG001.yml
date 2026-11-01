@@ -1,0 +1,9 @@
+header: Add a log
+active: true
+type: requirement
+links:
+- UN001: ABK5b5VfDFPa8aTQ8WlJ8IIVVPrXu5RP4vLj25ya_r0
+text: 'The user can add a log with a date (default: now), hay type, direction (deposit
+  or withdrawal), amount, horse count and optional notes. The amount must be a whole
+  number of at least 1.'
+reviewed: 7I4MMQfOvh6-Etbqzio1G3qNZrHC6PRXAKVPZs5CXGc

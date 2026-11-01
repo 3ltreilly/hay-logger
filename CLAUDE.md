@@ -6,9 +6,11 @@ burn rates and a usage chart. One app, `log_app`. SQLite database at `db/db.sqli
 ## Commands
 
 ```bash
-uv sync                           # dependencies into .venv (dev group: pytest, pytest-django, ruff)
+uv sync                           # dependencies into .venv (dev group: pytest, pytest-django, ruff, jamb)
 uv run python manage.py runserver # local dev server
 uv run pytest                     # all tests (pytest-django; config in pyproject.toml)
+uv run pytest --jamb              # tests + requirements coverage summary (writes .jamb)
+uv run jamb validate              # requirements tree: broken links, suspect links, unreviewed
 uv run python manage.py makemigrations --check --dry-run   # models match migrations?
 uv run ruff check --fix . && uv run ruff format .          # also run by pre-commit
 uv add <pkg> / uv add --dev <pkg> # add a dependency (ask first); updates uv.lock
@@ -36,6 +38,62 @@ file on the Synology (`/volume1/docker/hay-logger/hay-logger.env`, passed with
 CI installs from a clean environment (`uv sync --locked`), so it is the real test of
 `uv.lock`. A local venv can hold packages the lock doesn't pin (e.g. an old `setuptools`) and
 hide breakage; `rm -rf .venv && uv sync` gives you the same clean install.
+
+## Requirements (jamb)
+
+Requirements live as YAML in `reqs/`, traced to tests with the `jamb` pytest plugin.
+Background and best practices: `requirements_chat.md`.
+
+- **Hierarchy:** `PRJ` (root, ignored in tracing) -> `UN` user needs -> SRS (software
+  requirements), split by feature area into documents under `reqs/srs/`: `LOG` (adding,
+  editing, deleting logs), `DASH` (dashboard numbers), `HIST` (usage chart, CSV export).
+  UN text is in the user's words and is approved by the user; SRS text says what the system
+  does ("the dashboard shows…"), with a worked example in numbers.
+- **Test markers go on SRS items only** (`test_documents = ["LOG", "DASH", "HIST"]`):
+  `@pytest.mark.requirement("DASH001")`. Never mark tests with UN IDs; tests reach UN through
+  the SRS links. Only mark a test with a requirement it actually asserts; a page-loads smoke
+  test doesn't cover "shows a blank".
+- **Behavior changes update requirements in the same change.** Edit or add the SRS item
+  (`derived: true` if no user need applies), keep markers accurate, and list the changed
+  UIDs in the summary. Never edit a requirement just to make a test pass; flag the
+  mismatch instead.
+- **Add items with the CLI** (`uv run jamb item add DASH --links UN003 --header … --text …`)
+  so links and files are written correctly. Quote multi-line `text:` carefully; one bad
+  YAML file makes `jamb validate` fail for the whole tree.
+- **Reviews are the owner's/user's approval:** `jamb review mark` (an item's own text is
+  approved) and `jamb review clear` (a child still fits its changed parent). Only a person
+  runs them (see below). Editing an item clears its review and makes its children's links
+  suspect; that's intended.
+- **UIDs are permanent.** Don't renumber (`jamb reorder`, `item add --before/--after`):
+  approvals, emails and PRs quote them. Gaps are fine.
+- **Choosing an area:** put a requirement where the user sees the result (the empty date
+  is `DASH`, though it's a calculation). Areas are features as the user sees them, not code
+  modules. A new area gets its own folder, `.jamb.yml` (`parents: [UN]`), a never-reused
+  prefix, and an entry in `test_documents`. User needs stay in one `UN` folder; if they're
+  split later, split by user role and list every UN document in each SRS document's parents.
+- **Cross-cutting views:** custom YAML keys (e.g. `visible_to_user: true`; not part of the
+  review hash), not folders.
+- **`jamb check` misses markers on `TestCase` methods** (reports HIST002 uncovered); trust
+  `pytest --jamb`.
+- Generated output (`.jamb`, `matrix.html`, `srs.html`, `all.html`) isn't source.
+- Every SRS item has a test (10 of 10). Known gap: the "blank" cases in DASH002/003 are
+  only smoke-tested.
+
+### Commands agents must not run
+
+These record a person's approval or rewrite approved IDs. Agents never run them, even when
+asked mid-task or to make `jamb validate` pass; tell the owner what needs reviewing instead.
+
+- `jamb review mark` (any item, document or `all`): approves an item's text
+- `jamb review clear`: confirms a child still fits its changed parent
+- `jamb review reset`: throws away existing approvals
+- `jamb reorder`, `jamb item add --before/--after`: renumber UIDs that approvals quote
+- Nor the same by hand: never write or copy a `reviewed:` value or a link hash into a YAML
+  file
+
+`.claude/settings.json` denies the `jamb review` and `jamb reorder` commands to Claude Code
+(so the owner runs them in their own terminal). Hand edits and other tools aren't blocked;
+CI's `jamb validate -e` and reviewing the requirement diffs are the backstop.
 
 ## Gotchas
 

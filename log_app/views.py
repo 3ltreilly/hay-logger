@@ -9,6 +9,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
+from .forms import LogForm
 from .models import BaleCount, Log
 
 
@@ -157,7 +158,7 @@ class LogCreate(CreateView):
 
     # This make a form to enter in data
     model = Log
-    fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
+    form_class = LogForm
     success_url = reverse_lazy("index")
 
     def get_initial(self):
@@ -172,7 +173,7 @@ class LogCreate(CreateView):
 
 class LogEdit(UpdateView):
     model = Log
-    fields = ["date", "hay_type", "direction", "amount", "horse_count", "notes"]
+    form_class = LogForm
     success_url = reverse_lazy("index")
 
 
