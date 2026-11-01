@@ -1,6 +1,6 @@
 [project]
 name = "hay_logger"
-version = "0.3.0"
+version = "0.4.0"
 description = "track hay in the barn"
 authors = [{ name = "Bernie Reilly", email = "reilly_bernie@mac.com" }]
 readme = "readme.md"
